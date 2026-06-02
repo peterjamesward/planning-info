@@ -3,10 +3,11 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Dict exposing (Dict)
-import Element exposing (Element, alignRight, centerY, el, fill, padding, rgb255, row, spacing, text, width)
+import Element exposing (Element, alignRight, centerY, el, fill, fillPortion, padding, rgb255, row, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
+import Element.Input as Input
 import Html
 import Lamdera exposing (sendToBackend)
 import Types exposing (..)
@@ -60,6 +61,11 @@ update msg model =
         NoOpFrontendMsg ->
             ( model, Cmd.none )
 
+        Select string ->
+            ( { model | selected = Just string }
+            , Cmd.none
+            )
+
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
 updateFromBackend msg model =
@@ -108,8 +114,21 @@ view model =
                 , Font.size 14
                 ]
             <|
-                viewApplications model.applications
+                Element.row [ width fill ]
+                    [ el [ width <| fillPortion 1 ] (viewApplications model.applications)
+                    , el [ width <| fillPortion 1 ] (viewSelected model.selected model.applications)
+                    ]
     }
+
+
+viewSelected : Maybe String -> Dict String Application -> Element FrontendMsg
+viewSelected id applications =
+    case id of
+        Just string ->
+            text string
+
+        Nothing ->
+            text "Nothing selected"
 
 
 viewApplications : Dict String Application -> Element FrontendMsg
@@ -155,7 +174,13 @@ viewApplication application =
 
         ApplicationDetail detail ->
             Element.column [ spacing 4 ]
-                [ Element.el [ Font.bold ] <| Element.text detail.reference
+                [ Input.button
+                    [ Background.color <| Element.rgb255 180 180 250
+                    , padding 4
+                    ]
+                    { onPress = Just (Select detail.id)
+                    , label = text detail.reference
+                    }
                 , Element.text detail.address
                 , Element.row
                     [ Font.light, spacing 10 ]

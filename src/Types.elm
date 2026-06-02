@@ -10,7 +10,6 @@ import Url exposing (Url)
 
 
 --TODO: Fetch from plannexus once each work day.
---TODO: More robust method for making sure all details are ferched (use "every").
 --TODO: Reference is clickable for detail using source_url.
 --TODO: Detail view on map.
 --TODO: API key in config.
@@ -167,6 +166,7 @@ type FrontendMsg
     = UrlClicked UrlRequest
     | UrlChanged Url
     | NoOpFrontendMsg
+    | Select String
 
 
 type ToBackend
