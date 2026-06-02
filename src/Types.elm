@@ -4,23 +4,15 @@ import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Dict exposing (Dict)
 import Http
+import Time
 import Url exposing (Url)
 
 
 
---TODO: Fetch summaries from plannexus.
---TODO: Tabular view for summaries.
---TODO: Map view for summaries.
---DONE: Test in iframe on strikingly (crucial!)
---TODO: Send summaries to backend after fetch.
---TODO: Send summaries to frontend on startup.
---TODO: Only fetch from plannexus once a day (find newest entry).
---TODO: Fetch detail from plannexus.
+--TODO: Fetch details from plannexus, throttled to < 10/minute.
+--TODO: Fetch from plannexus once each work day.
 --TODO: Detail view.
 --TODO: Detail map view.
---TODO: Send detail to backend.
---TODO: Request detail from backend.
---TODO: Only fetch detail from plannexus if stale.
 
 
 type alias Root =
@@ -164,6 +156,8 @@ type alias BackendModel =
     { summaries : Dict String Summary
     , details : Dict String Detail
     , lastError : Maybe Http.Error
+    , lastFetch : Time.Posix
+    , currentTime : Time.Posix
     }
 
 
@@ -181,6 +175,7 @@ type ToBackend
 type BackendMsg
     = NoOpBackendMsg
     | GotSummaries (Result Http.Error Root)
+    | TheTimeIs Time.Posix
 
 
 type ToFrontend

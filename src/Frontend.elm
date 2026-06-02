@@ -10,6 +10,7 @@ import Element.Font as Font
 import Html
 import Html.Attributes as Attr
 import Lamdera exposing (sendToBackend)
+import Time
 import Types exposing (..)
 import Url
 
@@ -99,21 +100,38 @@ view model =
 viewSummaries : Dict String Summary -> Element FrontendMsg
 viewSummaries summaries =
     Element.column
-        [ Element.height fill
-        , Element.padding 10
+        [ Element.height (Element.px 600)
+        , Element.padding 20
         , Element.spacing 10
         ]
-    <|
-        List.map viewSummary <|
-            Dict.values summaries
+        [ Element.row [ spacing 5, Font.italic ]
+            [ Element.text "There are currently"
+            , Element.text (String.fromInt <| Dict.size summaries)
+            , Element.text "visible applications in HA7."
+            ]
+        , Element.el [ Font.italic ] <|
+            Element.text "This is refreshed once each work day."
+        , Element.column
+            [ Element.height (Element.px 600)
+            , Element.spacing 10
+            , Element.scrollbarY
+            , Element.scrollbars
+            ]
+          <|
+            List.map viewSummary <|
+                Dict.values summaries
+        ]
 
 
 viewSummary : Summary -> Element FrontendMsg
 viewSummary summary =
-    Element.column []
-        [ Element.text summary.reference
+    Element.column [ spacing 4 ]
+        [ Element.el [ Font.bold ] <| Element.text summary.reference
         , Element.text summary.address
-        , Element.text summary.application_type
-        , Element.text summary.date_received
-        , Element.text summary.status
+        , Element.row
+            [ Font.light, spacing 10 ]
+            [ Element.text summary.application_type
+            , Element.text summary.status
+            , Element.text summary.date_received
+            ]
         ]

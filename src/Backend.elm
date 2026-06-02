@@ -3,6 +3,7 @@ module Backend exposing (..)
 import Dict
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
+import Time
 import Types exposing (..)
 
 
@@ -15,7 +16,7 @@ app =
         { init = init
         , update = update
         , updateFromFrontend = updateFromFrontend
-        , subscriptions = \m -> Sub.none
+        , subscriptions = \m -> Time.every (60 * 1000) TheTimeIs
         }
 
 
@@ -24,8 +25,10 @@ init =
     ( { summaries = Dict.empty
       , details = Dict.empty
       , lastError = Nothing
+      , lastFetch = Time.millisToPosix 0
+      , currentTime = Time.millisToPosix 0
       }
-    , PlanNexus.requestSummaries GotSummaries
+    , Cmd.none
     )
 
 
@@ -34,6 +37,12 @@ update msg model =
     case msg of
         NoOpBackendMsg ->
             ( model, Cmd.none )
+
+        TheTimeIs now ->
+            -- Is it time for a fetch yet?
+            ( { model | currentTime = now }
+            , Cmd.none
+            )
 
         GotSummaries result ->
             case result of
@@ -45,6 +54,7 @@ update msg model =
                     ( { model
                         | summaries = summaries
                         , lastError = Nothing
+                        , lastFetch = model.currentTime
                       }
                     , Lamdera.broadcast (CachedSummaries summaries)
                     )
@@ -63,6 +73,9 @@ updateFromFrontend sessionId clientId msg model =
 
         NewClient ->
             ( model
-              --, sendToFrontend clientId (CachedSummaries model.summaries)
-            , PlanNexus.requestSummaries GotSummaries
+            , if Dict.isEmpty model.summaries then
+                PlanNexus.requestSummaries GotSummaries
+
+              else
+                sendToFrontend clientId (CachedSummaries model.summaries)
             )
