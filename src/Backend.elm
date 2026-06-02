@@ -23,8 +23,7 @@ app =
 
 init : ( Model, Cmd BackendMsg )
 init =
-    ( { summaries = Dict.empty
-      , details = Dict.empty
+    ( { applications = Dict.empty
       , lastError = Nothing
       , lastFetch = Time.millisToPosix 0
       , currentTime = Time.millisToPosix 0
@@ -50,17 +49,17 @@ update msg model =
             case result of
                 Ok value ->
                     let
-                        summaries =
+                        applications =
                             PlanNexus.summariesAsDict value.data
                     in
                     ( { model
-                        | summaries = summaries
+                        | applications = applications
                         , lastError = Nothing
                         , lastFetch = model.currentTime
-                        , pendingDetail = Dict.keys summaries
+                        , pendingDetail = Dict.keys applications
                       }
                     , Cmd.batch
-                        [ Lamdera.broadcast (CachedSummaries summaries)
+                        [ Lamdera.broadcast (CachedApplications applications)
                         , Delay.after 7000 GetNextDetail
                         ]
                     )
@@ -87,10 +86,13 @@ update msg model =
             case result of
                 Ok detail ->
                     ( { model
-                        | details = Dict.insert detail.id detail model.details
+                        | applications =
+                            Dict.insert detail.id
+                                (ApplicationDetail detail)
+                                model.applications
                         , lastError = Nothing
                       }
-                    , Lamdera.broadcast (CachedDetail detail)
+                    , Lamdera.broadcast (CachedApplication (ApplicationDetail detail))
                     )
 
                 Err error ->
@@ -107,9 +109,9 @@ updateFromFrontend sessionId clientId msg model =
 
         NewClient ->
             ( model
-            , if Dict.isEmpty model.summaries then
+            , if Dict.isEmpty model.applications then
                 PlanNexus.requestSummaries GotSummaries
 
               else
-                sendToFrontend clientId (CachedSummaries model.summaries)
+                sendToFrontend clientId (CachedApplications model.applications)
             )

@@ -8,9 +8,7 @@ import Element.Background as Background
 import Element.Border as Border
 import Element.Font as Font
 import Html
-import Html.Attributes as Attr
 import Lamdera exposing (sendToBackend)
-import Time
 import Types exposing (..)
 import Url
 
@@ -69,18 +67,24 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
-        CachedSummaries summaries ->
-            ( { model
-                | applications =
-                    summaries |> Dict.map (\id summary -> ApplicationSummary summary)
-              }
+        CachedApplications applications ->
+            ( { model | applications = applications }
             , Cmd.none
             )
 
-        CachedDetail detail ->
+        CachedApplication application ->
+            let
+                id =
+                    case application of
+                        ApplicationDetail detail ->
+                            detail.id
+
+                        ApplicationSummary summary ->
+                            summary.id
+            in
             ( { model
                 | applications =
-                    Dict.insert detail.id (ApplicationDetail detail) model.applications
+                    Dict.insert id application model.applications
               }
             , Cmd.none
             )

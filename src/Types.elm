@@ -9,10 +9,10 @@ import Url exposing (Url)
 
 
 
---TODO: Use "Application" type in backend as well, so new client gets all the details!
 --TODO: Fetch from plannexus once each work day.
---TODO: Detail view.
---TODO: Detail map view.
+--TODO: More robust method for making sure all details are ferched (use "every").
+--TODO: Reference is clickable for detail using source_url.
+--TODO: Detail view on map.
 --TODO: API key in config.
 
 
@@ -155,8 +155,7 @@ type alias FrontendModel =
 
 
 type alias BackendModel =
-    { summaries : Dict String Summary
-    , details : Dict String Detail
+    { applications : Dict String Application
     , lastError : Maybe Http.Error
     , lastFetch : Time.Posix
     , currentTime : Time.Posix
@@ -185,5 +184,5 @@ type BackendMsg
 
 type ToFrontend
     = NoOpToFrontend
-    | CachedSummaries (Dict String Summary)
-    | CachedDetail Detail
+    | CachedApplications (Dict String Application)
+    | CachedApplication Application

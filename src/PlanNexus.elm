@@ -112,11 +112,8 @@ detailDecoder =
             ""
 
 
-summariesAsDict : List Types.Summary -> Dict String Types.Summary
+summariesAsDict : List Types.Summary -> Dict String Types.Application
 summariesAsDict summaryList =
-    let
-        addSummary : Types.Summary -> Dict String Types.Summary -> Dict String Types.Summary
-        addSummary summary dict =
-            Dict.insert summary.id summary dict
-    in
-    List.foldl addSummary Dict.empty summaryList
+    summaryList
+        |> List.map (\summary -> ( summary.id, Types.ApplicationSummary summary ))
+        |> Dict.fromList
