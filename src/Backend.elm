@@ -63,5 +63,6 @@ updateFromFrontend sessionId clientId msg model =
 
         NewClient ->
             ( model
-            , sendToFrontend clientId (CachedSummaries model.summaries)
+              --, sendToFrontend clientId (CachedSummaries model.summaries)
+            , PlanNexus.requestSummaries GotSummaries
             )
