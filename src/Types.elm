@@ -177,8 +177,8 @@ type ToBackend
 type BackendMsg
     = NoOpBackendMsg
     | GotSummaries (Result Http.Error Root)
-    | TheTimeIs Time.Posix
-    | GetNextDetail
+    | MinuteTicker Time.Posix
+    | SevenSecondTicker Time.Posix
     | GotDetail (Result Http.Error Detail)
 
 

@@ -1,6 +1,5 @@
 module Backend exposing (..)
 
-import Delay
 import Dict
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
@@ -17,7 +16,12 @@ app =
         { init = init
         , update = update
         , updateFromFrontend = updateFromFrontend
-        , subscriptions = \m -> Time.every (60 * 1000) TheTimeIs
+        , subscriptions =
+            \m ->
+                Sub.batch
+                    [ Time.every (60 * 1000) MinuteTicker
+                    , Time.every (8 * 1000) SevenSecondTicker
+                    ]
         }
 
 
@@ -39,11 +43,22 @@ update msg model =
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        TheTimeIs now ->
-            -- Is it time for a fetch yet?
+        MinuteTicker now ->
+            -- Is it time for a new total fetch yet?
             ( { model | currentTime = now }
             , Cmd.none
             )
+
+        SevenSecondTicker now ->
+            -- Can we do a detail incremental fetch?
+            case model.pendingDetail of
+                first :: rest ->
+                    ( { model | pendingDetail = rest }
+                    , PlanNexus.requestDetail first GotDetail
+                    )
+
+                [] ->
+                    ( model, Cmd.none )
 
         GotSummaries result ->
             case result of
@@ -59,28 +74,13 @@ update msg model =
                         , pendingDetail = Dict.keys applications
                       }
                     , Cmd.batch
-                        [ Lamdera.broadcast (CachedApplications applications)
-                        , Delay.after 7000 GetNextDetail
-                        ]
+                        [ Lamdera.broadcast (CachedApplications applications) ]
                     )
 
                 Err error ->
                     ( { model | lastError = Just error }
                     , Cmd.none
                     )
-
-        GetNextDetail ->
-            case model.pendingDetail of
-                first :: rest ->
-                    ( { model | pendingDetail = rest }
-                    , Cmd.batch
-                        [ PlanNexus.requestDetail first GotDetail
-                        , Delay.after 7000 GetNextDetail
-                        ]
-                    )
-
-                [] ->
-                    ( model, Cmd.none )
 
         GotDetail result ->
             case result of
