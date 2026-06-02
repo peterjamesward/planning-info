@@ -23,6 +23,7 @@ init : ( Model, Cmd BackendMsg )
 init =
     ( { summaries = Dict.empty
       , details = Dict.empty
+      , lastError = Nothing
       }
     , PlanNexus.requestSummaries GotSummaries
     )
@@ -35,18 +36,23 @@ update msg model =
             ( model, Cmd.none )
 
         GotSummaries result ->
-            case Debug.log "RESULT" result of
+            case result of
                 Ok value ->
                     let
                         summaries =
                             PlanNexus.summariesAsDict value.data
                     in
-                    ( { model | summaries = summaries }
+                    ( { model
+                        | summaries = summaries
+                        , lastError = Nothing
+                      }
                     , Lamdera.broadcast (CachedSummaries summaries)
                     )
 
                 Err error ->
-                    ( model, Cmd.none )
+                    ( { model | lastError = Just error }
+                    , Cmd.none
+                    )
 
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )

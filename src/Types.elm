@@ -163,6 +163,7 @@ type alias FrontendModel =
 type alias BackendModel =
     { summaries : Dict String Summary
     , details : Dict String Detail
+    , lastError : Maybe Http.Error
     }
 
 
