@@ -3,6 +3,7 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Dict exposing (Dict)
+import Http
 import Url exposing (Url)
 
 
@@ -10,7 +11,7 @@ import Url exposing (Url)
 --TODO: Fetch summaries from plannexus.
 --TODO: Tabular view for summaries.
 --TODO: Map view for summaries.
---TODO: Test in iframe on strikingly (crucial!)
+--DONE: Test in iframe on strikingly (crucial!)
 --TODO: Send summaries to backend after fetch.
 --TODO: Send summaries to frontend on startup.
 --TODO: Only fetch from plannexus once a day (find newest entry).
@@ -20,6 +21,20 @@ import Url exposing (Url)
 --TODO: Send detail to backend.
 --TODO: Request detail from backend.
 --TODO: Only fetch detail from plannexus if stale.
+
+
+type alias Root =
+    { data : List Summary
+    , meta : Meta
+    }
+
+
+type alias Meta =
+    { total : Int
+    , page : Int
+    , per_page : Int
+    , total_pages : Int
+    }
 
 
 type alias Summary =
@@ -164,6 +179,7 @@ type ToBackend
 
 type BackendMsg
     = NoOpBackendMsg
+    | GotSummaries (Result Http.Error Root)
 
 
 type ToFrontend

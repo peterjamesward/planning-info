@@ -10,20 +10,6 @@ import Types exposing (..)
 import Url
 
 
-plannexus =
-    --"https://api.plannexus.io/v1/applications?postcode=HA7&authority_id=ef340ad8-1a60-43a8-b741-2483f6919d3f&per_page=100"
-    "https://api.plannexus.io/v1/"
-
-
-apiKey =
-    --Should not be here, I know.
-    "pn_live_dd5a90f71013ea2de78bec1c48349d0d6a9dd7bf35e07099"
-
-
-harrowUid =
-    "ef340ad8-1a60-43a8-b741-2483f6919d3f"
-
-
 type alias Model =
     FrontendModel
 
@@ -47,7 +33,6 @@ init url key =
       , detail = Nothing
       }
     , sendToBackend NewClient
-      -- Really requesting a set of summaries.
     )
 
 
@@ -80,7 +65,14 @@ updateFromBackend msg model =
             ( model, Cmd.none )
 
         CachedSummaries dict ->
-            ( { model | summaries = dict }, Cmd.none )
+            ( { model | summaries = dict }
+            , Cmd.none
+            )
+
+
+showId : ( String, Summary ) -> Html.Html msg
+showId ( id, summary ) =
+    Html.text summary.id
 
 
 view : Model -> Browser.Document FrontendMsg
@@ -93,7 +85,7 @@ view model =
                 [ Attr.style "font-family" "sans-serif"
                 , Attr.style "padding-top" "40px"
                 ]
-                [ Html.text "Ehllo orldw" ]
+                (model.summaries |> Dict.toList |> List.map showId)
             ]
         ]
     }

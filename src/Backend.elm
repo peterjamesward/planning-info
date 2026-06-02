@@ -2,6 +2,7 @@ module Backend exposing (..)
 
 import Dict
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
+import PlanNexus
 import Types exposing (..)
 
 
@@ -23,7 +24,7 @@ init =
     ( { summaries = Dict.empty
       , details = Dict.empty
       }
-    , Cmd.none
+    , PlanNexus.requestSummaries GotSummaries
     )
 
 
@@ -33,6 +34,20 @@ update msg model =
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
+        GotSummaries result ->
+            case Debug.log "RESULT" result of
+                Ok value ->
+                    let
+                        summaries =
+                            PlanNexus.summariesAsDict value.data
+                    in
+                    ( { model | summaries = summaries }
+                    , Lamdera.broadcast (CachedSummaries summaries)
+                    )
+
+                Err error ->
+                    ( model, Cmd.none )
+
 
 updateFromFrontend : SessionId -> ClientId -> ToBackend -> Model -> ( Model, Cmd BackendMsg )
 updateFromFrontend sessionId clientId msg model =
@@ -41,4 +56,6 @@ updateFromFrontend sessionId clientId msg model =
             ( model, Cmd.none )
 
         NewClient ->
-            ( model, sendToFrontend clientId (CachedSummaries model.summaries) )
+            ( model
+            , sendToFrontend clientId (CachedSummaries model.summaries)
+            )
