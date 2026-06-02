@@ -3,6 +3,7 @@ module Evergreen.V1.Types exposing (..)
 import Browser
 import Browser.Navigation
 import Dict
+import Http
 import Url
 
 
@@ -63,8 +64,23 @@ type ToBackend
     | NewClient
 
 
+type alias Meta =
+    { total : Int
+    , page : Int
+    , per_page : Int
+    , total_pages : Int
+    }
+
+
+type alias Root =
+    { data : List Summary
+    , meta : Meta
+    }
+
+
 type BackendMsg
     = NoOpBackendMsg
+    | GotSummaries (Result Http.Error Root)
 
 
 type ToFrontend
