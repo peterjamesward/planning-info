@@ -9,10 +9,11 @@ import Url exposing (Url)
 
 
 
---TODO: Fetch details from plannexus, throttled to < 10/minute.
+--TODO: Use "Application" type in backend as well, so new client gets all the details!
 --TODO: Fetch from plannexus once each work day.
 --TODO: Detail view.
 --TODO: Detail map view.
+--TODO: API key in config.
 
 
 type alias Root =
@@ -125,30 +126,31 @@ type alias Detail =
 
     -}
     { id : String
-    , authority_id : String
-    , authority_name : String
     , reference : String
     , address : String
     , description : String
     , application_type : String
     , status : String
-    , decision : Maybe String
+    , decision : String
     , date_received : String
-    , decision_date : Maybe String
+    , decision_date : String
     , latitude : Float
     , longitude : Float
-    , source_url : Maybe String
+    , source_url : String
     , ward : String
-
-    --Remainder as needed.
-    , conservation_area : Maybe String
+    , conservation_area : String
     }
+
+
+type Application
+    = ApplicationSummary Summary
+    | ApplicationDetail Detail
 
 
 type alias FrontendModel =
     { key : Key
-    , summaries : Dict String Summary
-    , detail : Maybe Detail
+    , applications : Dict String Application
+    , selected : Maybe String
     }
 
 
@@ -158,6 +160,7 @@ type alias BackendModel =
     , lastError : Maybe Http.Error
     , lastFetch : Time.Posix
     , currentTime : Time.Posix
+    , pendingDetail : List String
     }
 
 
@@ -176,8 +179,11 @@ type BackendMsg
     = NoOpBackendMsg
     | GotSummaries (Result Http.Error Root)
     | TheTimeIs Time.Posix
+    | GetNextDetail
+    | GotDetail (Result Http.Error Detail)
 
 
 type ToFrontend
     = NoOpToFrontend
     | CachedSummaries (Dict String Summary)
+    | CachedDetail Detail

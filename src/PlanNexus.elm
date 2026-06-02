@@ -41,6 +41,22 @@ requestSummaries msg =
         }
 
 
+requestDetail : String -> (Result Http.Error Types.Detail -> msg) -> Cmd msg
+requestDetail id msg =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "X-Api-Key" apiKey ]
+        , url =
+            Builder.crossOrigin plannexus
+                [ "v1", "applications", id ]
+                []
+        , body = Http.emptyBody
+        , expect = Http.expectJson msg detailDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
 rootDecoder : Decode.Decoder Types.Root
 rootDecoder =
     Decode.succeed Types.Root
@@ -69,6 +85,31 @@ dataDecoder =
         |> Pipeline.required "date_received" Decode.string
         |> Pipeline.required "latitude" Decode.float
         |> Pipeline.required "longitude" Decode.float
+
+
+detailDecoder : Decode.Decoder Types.Detail
+detailDecoder =
+    Decode.succeed Types.Detail
+        |> Pipeline.required "id" Decode.string
+        |> Pipeline.required "reference" Decode.string
+        |> Pipeline.required "address" Decode.string
+        |> Pipeline.required "description" Decode.string
+        |> Pipeline.required "application_type" Decode.string
+        |> Pipeline.required "status" Decode.string
+        |> Pipeline.optional "decision" Decode.string ""
+        |> Pipeline.required "date_received" Decode.string
+        |> Pipeline.optional "decision_date" Decode.string ""
+        |> Pipeline.required "latitude" Decode.float
+        |> Pipeline.required "longitude" Decode.float
+        |> Pipeline.required "source_url" Decode.string
+        |> Pipeline.required "ward" Decode.string
+        |> Pipeline.optionalAt
+            [ "constraints"
+            , "summary"
+            , "conservation_area"
+            ]
+            Decode.string
+            ""
 
 
 summariesAsDict : List Types.Summary -> Dict String Types.Summary

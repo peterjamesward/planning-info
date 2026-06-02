@@ -1,5 +1,6 @@
 module Backend exposing (..)
 
+import Delay
 import Dict
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
@@ -27,6 +28,7 @@ init =
       , lastError = Nothing
       , lastFetch = Time.millisToPosix 0
       , currentTime = Time.millisToPosix 0
+      , pendingDetail = []
       }
     , Cmd.none
     )
@@ -55,8 +57,40 @@ update msg model =
                         | summaries = summaries
                         , lastError = Nothing
                         , lastFetch = model.currentTime
+                        , pendingDetail = Dict.keys summaries
                       }
-                    , Lamdera.broadcast (CachedSummaries summaries)
+                    , Cmd.batch
+                        [ Lamdera.broadcast (CachedSummaries summaries)
+                        , Delay.after 7000 GetNextDetail
+                        ]
+                    )
+
+                Err error ->
+                    ( { model | lastError = Just error }
+                    , Cmd.none
+                    )
+
+        GetNextDetail ->
+            case model.pendingDetail of
+                first :: rest ->
+                    ( { model | pendingDetail = rest }
+                    , Cmd.batch
+                        [ PlanNexus.requestDetail first GotDetail
+                        , Delay.after 7000 GetNextDetail
+                        ]
+                    )
+
+                [] ->
+                    ( model, Cmd.none )
+
+        GotDetail result ->
+            case result of
+                Ok detail ->
+                    ( { model
+                        | details = Dict.insert detail.id detail model.details
+                        , lastError = Nothing
+                      }
+                    , Lamdera.broadcast (CachedDetail detail)
                     )
 
                 Err error ->

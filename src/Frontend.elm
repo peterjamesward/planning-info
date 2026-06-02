@@ -34,8 +34,8 @@ app =
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
     ( { key = key
-      , summaries = Dict.empty
-      , detail = Nothing
+      , applications = Dict.empty
+      , selected = Nothing
       }
     , sendToBackend NewClient
     )
@@ -69,8 +69,19 @@ updateFromBackend msg model =
         NoOpToFrontend ->
             ( model, Cmd.none )
 
-        CachedSummaries dict ->
-            ( { model | summaries = dict }
+        CachedSummaries summaries ->
+            ( { model
+                | applications =
+                    summaries |> Dict.map (\id summary -> ApplicationSummary summary)
+              }
+            , Cmd.none
+            )
+
+        CachedDetail detail ->
+            ( { model
+                | applications =
+                    Dict.insert detail.id (ApplicationDetail detail) model.applications
+              }
             , Cmd.none
             )
 
@@ -93,12 +104,12 @@ view model =
                 , Font.size 14
                 ]
             <|
-                viewSummaries model.summaries
+                viewApplications model.applications
     }
 
 
-viewSummaries : Dict String Summary -> Element FrontendMsg
-viewSummaries summaries =
+viewApplications : Dict String Application -> Element FrontendMsg
+viewApplications applications =
     Element.column
         [ Element.height (Element.px 600)
         , Element.padding 20
@@ -106,7 +117,7 @@ viewSummaries summaries =
         ]
         [ Element.row [ spacing 5, Font.italic ]
             [ Element.text "There are currently"
-            , Element.text (String.fromInt <| Dict.size summaries)
+            , Element.text (String.fromInt <| Dict.size applications)
             , Element.text "visible applications in HA7."
             ]
         , Element.el [ Font.italic ] <|
@@ -118,20 +129,35 @@ viewSummaries summaries =
             , Element.scrollbars
             ]
           <|
-            List.map viewSummary <|
-                Dict.values summaries
+            List.map viewApplication <|
+                Dict.values applications
         ]
 
 
-viewSummary : Summary -> Element FrontendMsg
-viewSummary summary =
-    Element.column [ spacing 4 ]
-        [ Element.el [ Font.bold ] <| Element.text summary.reference
-        , Element.text summary.address
-        , Element.row
-            [ Font.light, spacing 10 ]
-            [ Element.text summary.application_type
-            , Element.text summary.status
-            , Element.text summary.date_received
-            ]
-        ]
+viewApplication : Application -> Element FrontendMsg
+viewApplication application =
+    case application of
+        ApplicationSummary summary ->
+            Element.column [ spacing 4 ]
+                [ Element.el [ Font.bold ] <| Element.text summary.reference
+                , Element.text summary.address
+                , Element.row
+                    [ Font.light, spacing 10 ]
+                    [ Element.text summary.application_type
+                    , Element.text summary.status
+                    , Element.text summary.date_received
+                    ]
+                ]
+
+        ApplicationDetail detail ->
+            Element.column [ spacing 4 ]
+                [ Element.el [ Font.bold ] <| Element.text detail.reference
+                , Element.text detail.address
+                , Element.row
+                    [ Font.light, spacing 10 ]
+                    [ Element.text detail.application_type
+                    , Element.text detail.status
+                    , Element.text detail.date_received
+                    , Element.text "DETAIL"
+                    ]
+                ]
