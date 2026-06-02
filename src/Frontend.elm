@@ -2,7 +2,11 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import Dict
+import Dict exposing (Dict)
+import Element exposing (Element, alignRight, centerY, el, fill, padding, rgb255, row, spacing, text, width)
+import Element.Background as Background
+import Element.Border as Border
+import Element.Font as Font
 import Html
 import Html.Attributes as Attr
 import Lamdera exposing (sendToBackend)
@@ -79,13 +83,37 @@ view : Model -> Browser.Document FrontendMsg
 view model =
     { title = ""
     , body =
-        [ Html.div [ Attr.style "text-align" "center", Attr.style "padding-top" "40px" ]
-            [ Html.img [ Attr.src "https://lamdera.app/lamdera-logo-black.png", Attr.width 150 ] []
-            , Html.div
-                [ Attr.style "font-family" "sans-serif"
-                , Attr.style "padding-top" "40px"
+        List.singleton <|
+            Element.layout
+                [ Font.family
+                    [ Font.typeface "Helvetica"
+                    , Font.sansSerif
+                    ]
+                , Font.size 14
                 ]
-                (model.summaries |> Dict.toList |> List.map showId)
-            ]
-        ]
+            <|
+                viewSummaries model.summaries
     }
+
+
+viewSummaries : Dict String Summary -> Element FrontendMsg
+viewSummaries summaries =
+    Element.column
+        [ Element.height fill
+        , Element.padding 10
+        , Element.spacing 10
+        ]
+    <|
+        List.map viewSummary <|
+            Dict.values summaries
+
+
+viewSummary : Summary -> Element FrontendMsg
+viewSummary summary =
+    Element.column []
+        [ Element.text summary.reference
+        , Element.text summary.address
+        , Element.text summary.application_type
+        , Element.text summary.date_received
+        , Element.text summary.status
+        ]
