@@ -9,7 +9,6 @@ import Url.Builder as Builder
 
 
 plannexus =
-    --"https://api.plannexus.io/v1/applications?postcode=HA7&authority_id=ef340ad8-1a60-43a8-b741-2483f6919d3f&per_page=100"
     "https://api.plannexus.io"
 
 
@@ -22,8 +21,8 @@ harrowUid =
     "ef340ad8-1a60-43a8-b741-2483f6919d3f"
 
 
-requestSummaries : (Result Http.Error Types.Root -> msg) -> Cmd msg
-requestSummaries msg =
+requestSummaries : String -> (Result Http.Error Types.Root -> msg) -> Cmd msg
+requestSummaries sinceDate msg =
     Http.request
         { method = "GET"
         , headers = [ Http.header "X-Api-Key" apiKey ]
@@ -32,6 +31,7 @@ requestSummaries msg =
                 [ "v1", "applications" ]
                 [ Builder.string "postcode" "HA7"
                 , Builder.string "authority_id" harrowUid
+                , Builder.string "date_received_from" sinceDate
                 , Builder.int "per_page" 100
                 ]
         , body = Http.emptyBody
@@ -83,8 +83,8 @@ dataDecoder =
         |> Pipeline.required "status" Decode.string
         |> Pipeline.required "authority_name" Decode.string
         |> Pipeline.required "date_received" Decode.string
-        |> Pipeline.required "latitude" Decode.float
-        |> Pipeline.required "longitude" Decode.float
+        |> Pipeline.optional "latitude" Decode.float 0.0
+        |> Pipeline.optional "longitude" Decode.float 0.0
 
 
 detailDecoder : Decode.Decoder Types.Detail
@@ -99,20 +99,18 @@ detailDecoder =
         |> Pipeline.optional "decision" Decode.string ""
         |> Pipeline.required "date_received" Decode.string
         |> Pipeline.optional "decision_date" Decode.string ""
-        |> Pipeline.required "latitude" Decode.float
-        |> Pipeline.required "longitude" Decode.float
+        |> Pipeline.optional "latitude" Decode.float 0.0
+        |> Pipeline.optional "longitude" Decode.float 0.0
         |> Pipeline.required "source_url" Decode.string
         |> Pipeline.required "ward" Decode.string
-        |> Pipeline.optionalAt [ "constraints", "summary", "green_belt" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "green_belt" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "flood_risk_zone" ] Decode.string ""
         |> Pipeline.optionalAt [ "constraints", "summary", "conservation_area" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "scheduled_monument" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "world_heritage_site" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "tree_preservation_zone" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "tree_preservation_zone" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "listed_building_outline" ] Decode.string ""
         |> Pipeline.optionalAt [ "constraints", "summary", "article_4_direction_area" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "area_of_outstanding_natural_beauty" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "site_of_special_scientific_interest" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "area_of_outstanding_natural_beauty" ] Decode.bool False
+        |> Pipeline.optionalAt [ "constraints", "summary", "site_of_special_scientific_interest" ] Decode.bool False
 
 
 summariesAsDict : List Types.Summary -> Dict String Types.Application

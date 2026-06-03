@@ -12,10 +12,7 @@ import Url exposing (Url)
 --TODO: Fetch from plannexus once each work day.
 --TODO: Don't empty, see if we accumulate more over time, then add filters.
 --TODO: Reference is clickable for detail using source_url.
---TODO: For Details, show conservation area bubble in list view.
---TODO: Selected view on map.
 --TODO: API key in config.
---TODO: Any Application can be selected, not just Detail.
 
 
 type alias Root =
@@ -59,73 +56,73 @@ type alias Summary =
 type alias Detail =
     {- e.g.
 
-       "id": "e8eaffa6-9eb1-4515-b225-833a93fb673b",
-       "authority_id": "ef340ad8-1a60-43a8-b741-2483f6919d3f",
-       "authority_name": "Harrow",
-       "reference": "PL/0271/26",
-       "address": "MARTINSELL Green Lane, Stanmore, Harrow, HA7 3AB",
-       "postcode": "HA7 3AB",
-       "description": "Single storey rear extension; front porch; dormer to each side and rear roof slopes; external alterations including replacement of windows, installation of garage door, installation of CCTV cameras and installation of AC unit (part retrospective)",
-       "application_type": "householder",
-       "status": "received",
-       "decision": null,
-       "date_received": "2026-05-03",
-       "decision_date": null,
-       "latitude": 51.620276,
-       "longitude": -0.316661,
-       "source_url": "https://planningsearch.harrow.gov.uk/planning/index.html?fa=search",
-       "ward": "Stanmore",
-       "parish": "Harrow, unparished area",
-       "easting": null,
-       "northing": null,
-       "uprn": null,
-       "development_type": null,
-       "applicant_name": null,
-       "agent_name": null,
-       "agent_company": null,
-       "case_officer": null,
-       "appeal_status": null,
-       "appeal_decision": null,
-       "date_validated": null,
-       "consultation_start_date": null,
-       "consultation_end_date": null,
-       "target_decision_date": null,
-       "committee_date": null,
-       "constraints": {
-           "details": {
-               "conservation_area": [
-                   {
-                       "name": "Stanmore Hill Conservation Area",
-                       "entity": 44008807,
-                       "reference": "COA00000170",
-                       "documentation_url": ""
-                   }
-               ]
-           },
-           "summary": {
-               "green_belt": null,
-               "flood_risk_zone": null,
-               "conservation_area": "Stanmore Hill Conservation Area",
-               "scheduled_monument": null,
-               "world_heritage_site": null,
-               "tree_preservation_zone": null,
-               "listed_building_outline": null,
-               "article_4_direction_area": null,
-               "area_of_outstanding_natural_beauty": null,
-               "site_of_special_scientific_interest": null
-           }
-       },
-       "first_scraped_at": "2026-04-29T14:55:25.414219Z",
-       "last_scraped_at": "2026-05-03T02:00:17.263313Z",
-       "created_at": "2026-04-29T14:55:25.458065Z",
-       "updated_at": "2026-05-03T02:00:17.317844Z",
-       "redacted_fields": [
-           "applicant_name",
-           "agent_name",
-           "agent_company",
-           "case_officer"
-       ]
-
+              "id": "e8eaffa6-9eb1-4515-b225-833a93fb673b",
+              "authority_id": "ef340ad8-1a60-43a8-b741-2483f6919d3f",
+              "authority_name": "Harrow",
+              "reference": "PL/0271/26",
+              "address": "MARTINSELL Green Lane, Stanmore, Harrow, HA7 3AB",
+              "postcode": "HA7 3AB",
+              "description": "Single storey rear extension; front porch; dormer to each side and rear roof slopes; external alterations including replacement of windows, installation of garage door, installation of CCTV cameras and installation of AC unit (part retrospective)",
+              "application_type": "householder",
+              "status": "received",
+              "decision": null,
+              "date_received": "2026-05-03",
+              "decision_date": null,
+              "latitude": 51.620276,
+              "longitude": -0.316661,
+              "source_url": "https://planningsearch.harrow.gov.uk/planning/index.html?fa=search",
+              "ward": "Stanmore",
+              "parish": "Harrow, unparished area",
+              "easting": null,
+              "northing": null,
+              "uprn": null,
+              "development_type": null,
+              "applicant_name": null,
+              "agent_name": null,
+              "agent_company": null,
+              "case_officer": null,
+              "appeal_status": null,
+              "appeal_decision": null,
+              "date_validated": null,
+              "consultation_start_date": null,
+              "consultation_end_date": null,
+              "target_decision_date": null,
+              "committee_date": null,
+              "constraints": {
+                  "details": {
+                      "conservation_area": [
+                          {
+                              "name": "Stanmore Hill Conservation Area",
+                              "entity": 44008807,
+                              "reference": "COA00000170",
+                              "documentation_url": ""
+                          }
+                      ]
+                  },
+                  "summary": {
+                      "green_belt": null,
+                      "flood_risk_zone": null,
+                      "conservation_area": "Stanmore Hill Conservation Area",
+                      "scheduled_monument": null,
+                      "world_heritage_site": null,
+                      "tree_preservation_zone": null,
+                      "listed_building_outline": null,
+                      "article_4_direction_area": null,
+                      "area_of_outstanding_natural_beauty": null,
+                      "site_of_special_scientific_interest": null
+                  }
+              },
+              "first_scraped_at": "2026-04-29T14:55:25.414219Z",
+              "last_scraped_at": "2026-05-03T02:00:17.263313Z",
+              "created_at": "2026-04-29T14:55:25.458065Z",
+              "updated_at": "2026-05-03T02:00:17.317844Z",
+              "redacted_fields": [
+                  "applicant_name",
+                  "agent_name",
+                  "agent_company",
+                  "case_officer"
+              ]
+       unfortunately, the type of these specials seems indeterminate.
     -}
     { id : String
     , reference : String
@@ -140,16 +137,14 @@ type alias Detail =
     , longitude : Float
     , source_url : String
     , ward : String
-    , green_belt : String
+    , green_belt : Bool
     , flood_risk_zone : String
     , conservation_area : String
-    , scheduled_monument : String
-    , world_heritage_site : String
-    , tree_preservation_zone : String
+    , tree_preservation_zone : Bool
     , listed_building_outline : String
     , article_4_direction_area : String
-    , area_of_outstanding_natural_beauty : String
-    , site_of_special_scientific_interest : String
+    , area_of_outstanding_natural_beauty : Bool
+    , site_of_special_scientific_interest : Bool
     }
 
 

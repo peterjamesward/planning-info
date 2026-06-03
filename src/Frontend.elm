@@ -200,10 +200,10 @@ viewApplications applications =
         [ Element.row [ spacing 5, Font.italic ]
             [ Element.text "There are currently"
             , Element.text (String.fromInt <| Dict.size applications)
-            , Element.text "visible applications in HA7."
+            , Element.text "visible applications in Harrow for HA7 postcodes."
             ]
         , Element.el [ Font.italic ] <|
-            Element.text "This is refreshed once each work day."
+            Element.text "We refresh our data once each work day."
         , Element.column
             [ Element.height (Element.px 600)
             , Element.spacing 10
@@ -244,7 +244,12 @@ viewApplication application =
             Element.column [ spacing 4 ]
                 [ Element.el [ Font.bold ] <| Element.text detail.reference
                 , Element.text detail.address
-                , Element.wrappedRow [ spacing 4 ] (specials detail)
+                , case specials detail of
+                    [] ->
+                        Element.none
+
+                    some ->
+                        Element.wrappedRow [ spacing 4 ] some
                 , Element.row
                     [ Font.light, spacing 10 ]
                     [ Element.text detail.application_type
@@ -255,39 +260,47 @@ viewApplication application =
 
         specials : Detail -> List (Element FrontendMsg)
         specials detail =
-            [ special detail.green_belt
-            , special <| floodRisk detail
-            , special detail.conservation_area
-            , special detail.scheduled_monument
-            , special detail.world_heritage_site
-            , special detail.tree_preservation_zone
-            , special detail.listed_building_outline
-            , special detail.article_4_direction_area
-            , special detail.area_of_outstanding_natural_beauty
-            , special detail.site_of_special_scientific_interest
-            ]
+            [ if detail.green_belt then
+                "Green Belt"
 
-        special stringValue =
-            case stringValue of
-                "" ->
-                    Element.none
-
-                content ->
-                    el
-                        [ Font.color (rgb255 255 255 255)
-                        , Background.color (rgb255 200 100 100)
-                        , Border.rounded 5
-                        , padding 4
-                        ]
-                        (Element.text content)
-
-        floodRisk detail =
-            case detail.flood_risk_zone of
+              else
+                ""
+            , case detail.flood_risk_zone of
                 "" ->
                     ""
 
                 content ->
                     "Flood risk " ++ content
+            , detail.conservation_area
+            , if detail.tree_preservation_zone then
+                "Tree preservation order"
+
+              else
+                ""
+            , detail.listed_building_outline
+            , detail.article_4_direction_area
+            , if detail.area_of_outstanding_natural_beauty then
+                "AONB"
+
+              else
+                ""
+            , if detail.site_of_special_scientific_interest then
+                "SSSI"
+
+              else
+                ""
+            ]
+                |> List.filter (\s -> s /= "")
+                |> List.map
+                    (\s ->
+                        Element.el
+                            [ Border.rounded 5
+                            , padding 5
+                            , Background.color (rgb255 255 100 100)
+                            , Font.color (rgb255 255 255 255)
+                            ]
+                            (Element.text s)
+                    )
     in
     Input.button
         [ Background.color <| Element.rgb255 220 220 250

@@ -110,7 +110,7 @@ updateFromFrontend sessionId clientId msg model =
         NewClient ->
             ( model
             , if Dict.isEmpty model.applications then
-                PlanNexus.requestSummaries GotSummaries
+                PlanNexus.requestSummaries "2026-05-01" GotSummaries
 
               else
                 sendToFrontend clientId (CachedApplications model.applications)
