@@ -4,6 +4,7 @@ import Browser
 import Browser.Navigation
 import Dict
 import Http
+import Time
 import Url
 
 
@@ -22,34 +23,47 @@ type alias Summary =
 
 type alias Detail =
     { id : String
-    , authority_id : String
-    , authority_name : String
     , reference : String
     , address : String
     , description : String
     , application_type : String
     , status : String
-    , decision : Maybe String
+    , decision : String
     , date_received : String
-    , decision_date : Maybe String
+    , decision_date : String
     , latitude : Float
     , longitude : Float
-    , source_url : Maybe String
+    , source_url : String
     , ward : String
-    , conservation_area : Maybe String
+    , green_belt : Bool
+    , flood_risk_zone : String
+    , conservation_area : String
+    , tree_preservation_zone : Bool
+    , listed_building_outline : String
+    , article_4_direction_area : String
+    , area_of_outstanding_natural_beauty : Bool
+    , site_of_special_scientific_interest : Bool
     }
+
+
+type Application
+    = ApplicationSummary Summary
+    | ApplicationDetail Detail
 
 
 type alias FrontendModel =
     { key : Browser.Navigation.Key
-    , summaries : Dict.Dict String Summary
-    , detail : Maybe Detail
+    , applications : Dict.Dict String Application
+    , selected : Maybe String
     }
 
 
 type alias BackendModel =
-    { summaries : Dict.Dict String Summary
-    , details : Dict.Dict String Detail
+    { applications : Dict.Dict String Application
+    , lastError : Maybe Http.Error
+    , lastFetch : Time.Posix
+    , currentTime : Time.Posix
+    , pendingDetail : List String
     }
 
 
@@ -57,6 +71,7 @@ type FrontendMsg
     = UrlClicked Browser.UrlRequest
     | UrlChanged Url.Url
     | NoOpFrontendMsg
+    | Select String
 
 
 type ToBackend
@@ -81,8 +96,12 @@ type alias Root =
 type BackendMsg
     = NoOpBackendMsg
     | GotSummaries (Result Http.Error Root)
+    | HourTicker Time.Posix
+    | SevenSecondTicker Time.Posix
+    | GotDetail (Result Http.Error Detail)
 
 
 type ToFrontend
     = NoOpToFrontend
-    | CachedSummaries (Dict.Dict String Summary)
+    | CachedApplications (Dict.Dict String Application)
+    | CachedApplication Application
