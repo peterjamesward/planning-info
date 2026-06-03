@@ -125,7 +125,7 @@ view model =
                         , Element.text (String.fromInt <| Dict.size model.applications)
                         , Element.text " visible applications in Harrow for HA7 postcodes. "
                         , Element.el [ Font.italic ] <|
-                            Element.text "We refresh our data once each work day."
+                            Element.text "Each work day we request new applications for the previous four weeks."
                         ]
                     ]
     }
