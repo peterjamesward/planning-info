@@ -131,6 +131,25 @@ view model =
     }
 
 
+linkToCouncil : Application -> Element FrontendMsg
+linkToCouncil application =
+    case application of
+        ApplicationDetail detail ->
+            Element.newTabLink
+                [ Font.bold
+                , Border.width 2
+                , Border.rounded 5
+                , padding 5
+                , Border.color (rgb255 150 150 250)
+                ]
+                { url = detail.source_url
+                , label = Element.text "Click here to view details or search on council planning portal"
+                }
+
+        ApplicationSummary _ ->
+            Element.none
+
+
 viewSelected : Maybe String -> Dict String Application -> Element FrontendMsg
 viewSelected id applications =
     case id of
@@ -141,6 +160,7 @@ viewSelected id applications =
                         Element.column [ spacing 10 ]
                             [ viewOnMap application
                             , viewApplication application
+                            , linkToCouncil application
                             ]
 
                     Nothing ->
@@ -252,6 +272,7 @@ viewApplication application =
 
                     some ->
                         Element.wrappedRow [ spacing 4 ] some
+                , Element.paragraph [] [ Element.text detail.description ]
                 , Element.row
                     [ Font.light, spacing 10 ]
                     [ Element.text detail.application_type
