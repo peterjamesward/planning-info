@@ -10,6 +10,7 @@ import Url exposing (Url)
 
 
 --TODO: Fetch from plannexus once each work day.
+--TODO: Don't empty, see if we accumulate more over time, then add filters.
 --TODO: Reference is clickable for detail using source_url.
 --TODO: For Details, show conservation area bubble in list view.
 --TODO: Selected view on map.
@@ -139,7 +140,16 @@ type alias Detail =
     , longitude : Float
     , source_url : String
     , ward : String
+    , green_belt : String
+    , flood_risk_zone : String
     , conservation_area : String
+    , scheduled_monument : String
+    , world_heritage_site : String
+    , tree_preservation_zone : String
+    , listed_building_outline : String
+    , article_4_direction_area : String
+    , area_of_outstanding_natural_beauty : String
+    , site_of_special_scientific_interest : String
     }
 
 
