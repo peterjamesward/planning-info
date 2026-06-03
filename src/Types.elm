@@ -9,8 +9,6 @@ import Url exposing (Url)
 
 
 
---TODO: Fetch from plannexus once each work day for preceding 30 days.
---TODO: Reference is clickable for detail using source_url.
 --TODO: API keys in config.
 
 
@@ -183,7 +181,7 @@ type ToBackend
 type BackendMsg
     = NoOpBackendMsg
     | GotSummaries (Result Http.Error Root)
-    | MinuteTicker Time.Posix
+    | HourTicker Time.Posix
     | SevenSecondTicker Time.Posix
     | GotDetail (Result Http.Error Detail)
 
