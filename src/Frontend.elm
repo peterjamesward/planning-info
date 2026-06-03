@@ -3,7 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Dict exposing (Dict)
-import Element exposing (Element, alignLeft, alignRight, centerY, el, fill, fillPortion, padding, rgb255, row, spacing, text, width)
+import Element exposing (Element, alignLeft, alignRight, centerY, el, fill, fillPortion, padding, rgb255, rgba255, row, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border exposing (rounded)
 import Element.Font as Font
@@ -17,6 +17,10 @@ import Url.Builder as Builder
 
 type alias Model =
     FrontendModel
+
+
+stanmoreGreen =
+    rgb255 175 207 170
 
 
 app =
@@ -140,7 +144,7 @@ linkToCouncil application =
                 , Border.width 2
                 , Border.rounded 5
                 , padding 5
-                , Border.color (rgb255 150 150 250)
+                , Border.color stanmoreGreen
                 ]
                 { url = detail.source_url
                 , label = Element.text "Click here to view details or search on council planning portal"
@@ -326,7 +330,8 @@ viewApplication application =
                     )
     in
     Input.button
-        [ Background.color <| Element.rgb255 220 220 250
+        [ Border.color stanmoreGreen
+        , Border.width 4
         , rounded 8
         , padding 5
         , width fill
