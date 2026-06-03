@@ -11,8 +11,10 @@ import Url exposing (Url)
 
 --TODO: Fetch from plannexus once each work day.
 --TODO: Reference is clickable for detail using source_url.
---TODO: Detail view on map.
+--TODO: For Details, show conservation area bubble in list view.
+--TODO: Selected view on map.
 --TODO: API key in config.
+--TODO: Any Application can be selected, not just Detail.
 
 
 type alias Root =

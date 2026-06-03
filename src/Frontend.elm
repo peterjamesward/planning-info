@@ -5,7 +5,7 @@ import Browser.Navigation as Nav
 import Dict exposing (Dict)
 import Element exposing (Element, alignRight, centerY, el, fill, fillPortion, padding, rgb255, row, spacing, text, width)
 import Element.Background as Background
-import Element.Border as Border
+import Element.Border as Border exposing (rounded)
 import Element.Font as Font
 import Element.Input as Input
 import Html
@@ -159,8 +159,16 @@ viewApplications applications =
 
 viewApplication : Application -> Element FrontendMsg
 viewApplication application =
-    case application of
-        ApplicationSummary summary ->
+    let
+        applicationId =
+            case application of
+                ApplicationSummary summary ->
+                    summary.id
+
+                ApplicationDetail detail ->
+                    detail.id
+
+        asSummary summary =
             Element.column [ spacing 4 ]
                 [ Element.el [ Font.bold ] <| Element.text summary.reference
                 , Element.text summary.address
@@ -172,15 +180,9 @@ viewApplication application =
                     ]
                 ]
 
-        ApplicationDetail detail ->
+        asDetail detail =
             Element.column [ spacing 4 ]
-                [ Input.button
-                    [ Background.color <| Element.rgb255 180 180 250
-                    , padding 4
-                    ]
-                    { onPress = Just (Select detail.id)
-                    , label = text detail.reference
-                    }
+                [ Element.el [ Font.bold ] <| Element.text detail.reference
                 , Element.text detail.address
                 , Element.row
                     [ Font.light, spacing 10 ]
@@ -190,3 +192,19 @@ viewApplication application =
                     , Element.text "DETAIL"
                     ]
                 ]
+    in
+    Input.button
+        [ Background.color <| Element.rgb255 220 220 250
+        , rounded 8
+        , padding 5
+        , width fill
+        ]
+        { onPress = Just <| Select <| applicationId
+        , label =
+            case application of
+                ApplicationSummary summary ->
+                    asSummary summary
+
+                ApplicationDetail detail ->
+                    asDetail detail
+        }
