@@ -3,7 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Dict exposing (Dict)
-import Element exposing (Element, alignRight, centerY, el, fill, fillPortion, padding, rgb255, row, spacing, text, width)
+import Element exposing (Element, alignLeft, alignRight, centerY, el, fill, fillPortion, padding, rgb255, row, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border exposing (rounded)
 import Element.Font as Font
@@ -12,6 +12,7 @@ import Html
 import Lamdera exposing (sendToBackend)
 import Types exposing (..)
 import Url
+import Url.Builder as Builder
 
 
 type alias Model =
@@ -114,7 +115,7 @@ view model =
                 , Font.size 14
                 ]
             <|
-                Element.row [ width fill ]
+                Element.row [ alignLeft ]
                     [ el [ width <| fillPortion 1 ] (viewApplications model.applications)
                     , el [ width <| fillPortion 1 ] (viewSelected model.selected model.applications)
                     ]
@@ -125,10 +126,68 @@ viewSelected : Maybe String -> Dict String Application -> Element FrontendMsg
 viewSelected id applications =
     case id of
         Just string ->
-            text string
+            Element.column [ padding 10, spacing 10, alignLeft, centerY ]
+                [ case Dict.get string applications of
+                    Just application ->
+                        Element.column [ spacing 10 ]
+                            [ viewOnMap application
+                            , viewApplication application
+                            ]
+
+                    Nothing ->
+                        Element.text "gone!"
+                , Element.el [ Font.italic, alignRight ] <| Element.text string
+                ]
 
         Nothing ->
             text "Nothing selected"
+
+
+mapsApiKey =
+    "AIzaSyAZkdWkG0jidxa1gRF3MmY4GvbtaAWMpDY"
+
+
+mapApiRoot =
+    "https://maps.googleapis.com"
+
+
+mapApiPath =
+    [ "maps", "api", "staticmap" ]
+
+
+viewOnMap : Application -> Element FrontendMsg
+viewOnMap application =
+    {- e.g.
+       https://maps.googleapis.com/maps/api/staticmap
+       ?center=40.714728,-73.998672&zoom=12&size=400x400&
+       key=YOUR%5C_API%5C_KEY%5C%60
+    -}
+    let
+        ( lat, long ) =
+            case application of
+                ApplicationSummary summary ->
+                    ( summary.latitude, summary.longitude )
+
+                ApplicationDetail detail ->
+                    ( detail.latitude, detail.longitude )
+
+        coordString =
+            String.fromFloat lat ++ "," ++ String.fromFloat long
+
+        staticMapUrl =
+            Builder.crossOrigin mapApiRoot
+                mapApiPath
+                [ Builder.string "center" coordString
+                , Builder.string "markers" coordString
+                , Builder.int "zoom" 16
+                , Builder.string "size" "600x400"
+                , Builder.string "key" mapsApiKey
+                ]
+    in
+    Element.image []
+        { src = staticMapUrl
+        , description = "Google Map"
+        }
 
 
 viewApplications : Dict String Application -> Element FrontendMsg
@@ -191,7 +250,6 @@ viewApplication application =
                     [ Element.text detail.application_type
                     , Element.text detail.status
                     , Element.text detail.date_received
-                    , Element.text "DETAIL"
                     ]
                 ]
 
