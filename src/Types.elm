@@ -9,10 +9,9 @@ import Url exposing (Url)
 
 
 
---TODO: Fetch from plannexus once each work day.
---TODO: Don't empty, see if we accumulate more over time, then add filters.
+--TODO: Fetch from plannexus once each work day for preceding 30 days.
 --TODO: Reference is clickable for detail using source_url.
---TODO: API key in config.
+--TODO: API keys in config.
 
 
 type alias Root =

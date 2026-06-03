@@ -115,9 +115,18 @@ view model =
                 , Font.size 14
                 ]
             <|
-                Element.row [ alignLeft ]
-                    [ el [ width <| fillPortion 1 ] (viewApplications model.applications)
-                    , el [ width <| fillPortion 1 ] (viewSelected model.selected model.applications)
+                Element.column [ Element.alignTop, padding 10, spacing 10, Element.alignLeft ]
+                    [ Element.row []
+                        [ el [ width <| fillPortion 1 ] (viewApplications model.applications)
+                        , el [ width <| fillPortion 1 ] (viewSelected model.selected model.applications)
+                        ]
+                    , Element.paragraph [ spacing 5, Font.italic, Element.centerX ]
+                        [ Element.text "There are currently "
+                        , Element.text (String.fromInt <| Dict.size model.applications)
+                        , Element.text " visible applications in Harrow for HA7 postcodes. "
+                        , Element.el [ Font.italic ] <|
+                            Element.text "We refresh our data once each work day."
+                        ]
                     ]
     }
 
@@ -197,14 +206,7 @@ viewApplications applications =
         , Element.padding 20
         , Element.spacing 10
         ]
-        [ Element.row [ spacing 5, Font.italic ]
-            [ Element.text "There are currently"
-            , Element.text (String.fromInt <| Dict.size applications)
-            , Element.text "visible applications in Harrow for HA7 postcodes."
-            ]
-        , Element.el [ Font.italic ] <|
-            Element.text "We refresh our data once each work day."
-        , Element.column
+        [ Element.column
             [ Element.height (Element.px 600)
             , Element.spacing 10
             , Element.scrollbarY
