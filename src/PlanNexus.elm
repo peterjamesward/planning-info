@@ -101,16 +101,16 @@ detailDecoder =
         |> Pipeline.optional "decision_date" Decode.string ""
         |> Pipeline.optional "latitude" Decode.float 0.0
         |> Pipeline.optional "longitude" Decode.float 0.0
-        |> Pipeline.required "source_url" Decode.string
-        |> Pipeline.required "ward" Decode.string
-        |> Pipeline.optionalAt [ "constraints", "summary", "green_belt" ] Decode.bool False
-        |> Pipeline.optionalAt [ "constraints", "summary", "flood_risk_zone" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "conservation_area" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "tree_preservation_zone" ] Decode.bool False
-        |> Pipeline.optionalAt [ "constraints", "summary", "listed_building_outline" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "article_4_direction_area" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "area_of_outstanding_natural_beauty" ] Decode.bool False
-        |> Pipeline.optionalAt [ "constraints", "summary", "site_of_special_scientific_interest" ] Decode.bool False
+        |> Pipeline.optional "source_url" Decode.string ""
+        |> Pipeline.optional "ward" Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "green_belt", "present" ] Decode.bool False
+        |> Pipeline.optionalAt [ "constraints", "summary", "flood_risk_zone", "label" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "conservation_area", "label" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "tree_preservation_zone", "present", "label" ] Decode.bool False
+        |> Pipeline.optionalAt [ "constraints", "summary", "listed_building_outline", "label" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "article_4_direction_area", "label" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "area_of_outstanding_natural_beauty", "present" ] Decode.bool False
+        |> Pipeline.optionalAt [ "constraints", "summary", "site_of_special_scientific_interest", "present" ] Decode.bool False
 
 
 summariesAsDict : List Types.Summary -> Dict String Types.Application

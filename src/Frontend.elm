@@ -3,7 +3,7 @@ module Frontend exposing (..)
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
 import Dict exposing (Dict)
-import Element exposing (Element, alignLeft, alignRight, centerY, el, fill, fillPortion, padding, rgb255, rgba255, row, spacing, text, width)
+import Element exposing (Element, alignLeft, alignRight, centerX, centerY, el, fill, fillPortion, padding, rgb255, rgba255, row, spacing, text, width)
 import Element.Background as Background
 import Element.Border as Border exposing (rounded)
 import Element.Font as Font
@@ -20,7 +20,11 @@ type alias Model =
 
 
 stanmoreGreen =
-    rgb255 175 207 170
+    rgba255 75 107 70 0.2
+
+
+stanmoreWhite =
+    rgba255 255 255 255 1.0
 
 
 app =
@@ -121,8 +125,8 @@ view model =
             <|
                 Element.column [ Element.alignTop, padding 10, spacing 10, Element.alignLeft ]
                     [ Element.row []
-                        [ el [ width <| fillPortion 1 ] (viewApplications model.applications)
-                        , el [ width <| fillPortion 1 ] (viewSelected model.selected model.applications)
+                        [ viewApplications model.applications
+                        , viewSelected model.selected model.applications
                         ]
                     , Element.paragraph [ spacing 5, Font.italic, Element.centerX ]
                         [ Element.text "There are currently "
@@ -158,7 +162,11 @@ viewSelected : Maybe String -> Dict String Application -> Element FrontendMsg
 viewSelected id applications =
     case id of
         Just string ->
-            Element.column [ padding 10, spacing 10, alignLeft, centerY ]
+            Element.column
+                [ width (Element.px 500)
+                , padding 10
+                , spacing 10
+                ]
                 [ case Dict.get string applications of
                     Just application ->
                         Element.column [ spacing 10 ]
@@ -173,7 +181,13 @@ viewSelected id applications =
                 ]
 
         Nothing ->
-            text "Nothing selected"
+            Element.el
+                [ width (Element.px 500)
+                , padding 10
+                , spacing 10
+                ]
+            <|
+                text "Please select from the list on the left."
 
 
 mapsApiKey =
@@ -213,7 +227,7 @@ viewOnMap application =
                 [ Builder.string "center" coordString
                 , Builder.string "markers" coordString
                 , Builder.int "zoom" 16
-                , Builder.string "size" "600x400"
+                , Builder.string "size" "500x400"
                 , Builder.string "key" mapsApiKey
                 ]
     in
@@ -227,19 +241,15 @@ viewApplications : Dict String Application -> Element FrontendMsg
 viewApplications applications =
     Element.column
         [ Element.height (Element.px 600)
-        , Element.padding 20
+        , Element.width (Element.px 500)
+        , Element.padding 10
         , Element.spacing 10
+        , Element.scrollbarY
+        , Background.color stanmoreGreen
         ]
-        [ Element.column
-            [ Element.height (Element.px 600)
-            , Element.spacing 10
-            , Element.scrollbarY
-            , Element.scrollbars
-            ]
-          <|
-            List.map viewApplication <|
-                Dict.values applications
-        ]
+    <|
+        List.map viewApplication <|
+            Dict.values applications
 
 
 viewApplication : Application -> Element FrontendMsg
@@ -330,8 +340,7 @@ viewApplication application =
                     )
     in
     Input.button
-        [ Border.color stanmoreGreen
-        , Border.width 4
+        [ Background.color stanmoreWhite
         , rounded 8
         , padding 5
         , width fill
