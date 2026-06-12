@@ -151,7 +151,9 @@ linkToCouncil application =
                 , Border.color stanmoreGreen
                 ]
                 { url = detail.source_url
-                , label = Element.text "Click here to view details or search on council planning portal"
+                , label =
+                    Element.paragraph []
+                        [ Element.text "Click here to view details or search on council planning portal" ]
                 }
 
         ApplicationSummary _ ->
@@ -163,7 +165,7 @@ viewSelected id applications =
     case id of
         Just string ->
             Element.column
-                [ width (Element.px 500)
+                [ width (Element.px 400)
                 , padding 10
                 , spacing 10
                 ]
@@ -182,7 +184,7 @@ viewSelected id applications =
 
         Nothing ->
             Element.el
-                [ width (Element.px 500)
+                [ width (Element.px 400)
                 , padding 10
                 , spacing 10
                 ]
@@ -227,7 +229,7 @@ viewOnMap application =
                 [ Builder.string "center" coordString
                 , Builder.string "markers" coordString
                 , Builder.int "zoom" 16
-                , Builder.string "size" "500x400"
+                , Builder.string "size" "400x400"
                 , Builder.string "key" mapsApiKey
                 ]
     in
@@ -241,7 +243,7 @@ viewApplications : Dict String Application -> Element FrontendMsg
 viewApplications applications =
     Element.column
         [ Element.height (Element.px 600)
-        , Element.width (Element.px 500)
+        , Element.width (Element.px 400)
         , Element.padding 10
         , Element.spacing 10
         , Element.scrollbarY
