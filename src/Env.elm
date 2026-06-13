@@ -6,3 +6,7 @@ module Env exposing (..)
 
 dummyConfigItem =
     ""
+
+
+plannexusApiKey =
+    "secret"

@@ -1,6 +1,7 @@
 module PlanNexus exposing (..)
 
 import Dict exposing (Dict)
+import Env
 import Http
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
@@ -12,11 +13,6 @@ plannexus =
     "https://api.plannexus.io"
 
 
-apiKey =
-    --Should not be here, I know.
-    "pn_live_dd5a90f71013ea2de78bec1c48349d0d6a9dd7bf35e07099"
-
-
 harrowUid =
     "ef340ad8-1a60-43a8-b741-2483f6919d3f"
 
@@ -25,7 +21,7 @@ requestSummaries : String -> (Result Http.Error Types.Root -> msg) -> Cmd msg
 requestSummaries sinceDate msg =
     Http.request
         { method = "GET"
-        , headers = [ Http.header "X-Api-Key" apiKey ]
+        , headers = [ Http.header "X-Api-Key" Env.plannexusApiKey ]
         , url =
             Builder.crossOrigin plannexus
                 [ "v1", "applications" ]
@@ -45,7 +41,7 @@ requestDetail : String -> (Result Http.Error Types.Detail -> msg) -> Cmd msg
 requestDetail id msg =
     Http.request
         { method = "GET"
-        , headers = [ Http.header "X-Api-Key" apiKey ]
+        , headers = [ Http.header "X-Api-Key" Env.plannexusApiKey ]
         , url =
             Builder.crossOrigin plannexus
                 [ "v1", "applications", id ]
