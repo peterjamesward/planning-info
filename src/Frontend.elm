@@ -268,7 +268,7 @@ viewApplication application =
         asSummary summary =
             Element.column [ spacing 4 ]
                 [ Element.el [ Font.bold ] <| Element.text summary.reference
-                , Element.text summary.address
+                , Element.paragraph [] [ Element.text summary.address ]
                 , Element.row
                     [ Font.light, spacing 10 ]
                     [ Element.text summary.application_type
@@ -281,7 +281,7 @@ viewApplication application =
         asDetail detail =
             Element.column [ spacing 4 ]
                 [ Element.el [ Font.bold ] <| Element.text detail.reference
-                , Element.text detail.address
+                , Element.paragraph [] [ Element.text detail.address ]
                 , case specials detail of
                     [] ->
                         Element.none
