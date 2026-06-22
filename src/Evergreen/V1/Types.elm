@@ -63,7 +63,6 @@ type alias BackendModel =
     , lastError : Maybe Http.Error
     , lastFetch : Time.Posix
     , currentTime : Time.Posix
-    , pendingDetail : List String
     }
 
 
