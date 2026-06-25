@@ -12,7 +12,7 @@ Decode status to our internal types.
 
 Wait for details before sending to front end.
 
-Colour code constraint indicators.
+~~Colour code constraint indicators.~~
 
 Colour code status indicators.
 

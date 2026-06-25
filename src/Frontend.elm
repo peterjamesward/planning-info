@@ -7,6 +7,7 @@ import Element exposing (Element, alignLeft, alignRight, centerX, centerY, el, f
 import Element.Background as Background
 import Element.Border as Border exposing (rounded)
 import Element.Font as Font
+import Element.HexColor as HexColor exposing (hex)
 import Element.Input as Input
 import Html
 import Lamdera exposing (sendToBackend)
@@ -295,53 +296,62 @@ viewApplication application =
                     ]
                 ]
 
+        safeHex x =
+            x |> hex |> Maybe.withDefault (rgb255 140 140 140)
+
         specials : Detail -> List (Element FrontendMsg)
         specials detail =
             [ if detail.green_belt then
-                "Green Belt"
+                Just <| constraintWidget "Green Belt" (safeHex "#48742E")
 
               else
-                ""
-            , case detail.flood_risk_zone of
-                "" ->
-                    ""
+                Nothing
+            , if detail.flood_risk_zone /= "" then
+                Just <| constraintWidget ("Flood risk " ++ detail.flood_risk_zone) (safeHex "#529AB0")
 
-                content ->
-                    "Flood risk " ++ content
-            , detail.conservation_area
+              else
+                Nothing
+            , if detail.conservation_area /= "" then
+                Just <| constraintWidget detail.conservation_area (safeHex "#938057")
+
+              else
+                Nothing
             , if detail.tree_preservation_zone then
-                "Tree preservation order"
+                Just <| constraintWidget "Tree preservation order" (safeHex "#848484")
 
               else
-                ""
-            , detail.listed_building_outline
+                Nothing
+            , if detail.listed_building_outline /= "" then
+                Just <| constraintWidget detail.listed_building_outline (safeHex "#AC247C")
+
+              else
+                Nothing
             , if detail.article_4_direction_area then
-                "Article 4"
+                Just <| constraintWidget "Article 4" (safeHex "#D77053")
 
               else
-                ""
+                Nothing
             , if detail.area_of_outstanding_natural_beauty then
-                "AONB"
+                Just <| constraintWidget "AONB" (safeHex "#6474BC")
 
               else
-                ""
+                Nothing
             , if detail.site_of_special_scientific_interest then
-                "SSSI"
+                Just <| constraintWidget "SSSI" (safeHex "#4E82C3")
 
               else
-                ""
+                Nothing
             ]
-                |> List.filter (\s -> s /= "")
-                |> List.map
-                    (\s ->
-                        Element.el
-                            [ Border.rounded 5
-                            , padding 5
-                            , Background.color (rgb255 255 100 100)
-                            , Font.color (rgb255 255 255 255)
-                            ]
-                            (Element.text s)
-                    )
+                |> List.filterMap identity
+
+        constraintWidget label colour =
+            Element.el
+                [ Border.rounded 5
+                , padding 5
+                , Background.color colour
+                , Font.color (rgb255 255 255 255)
+                ]
+                (Element.text label)
     in
     Input.button
         [ Background.color stanmoreWhite
