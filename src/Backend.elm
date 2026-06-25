@@ -5,6 +5,7 @@ import Dict
 import Fifo
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
+import Set
 import Task
 import Time
 import Types exposing (..)
@@ -168,11 +169,27 @@ update msg model =
         GotSummaries fetch result ->
             case result of
                 Ok value ->
-                    --If there's another page, queue up the next query.
-                    --Note that an updated Summary will displace an existing Detail;
-                    --this is what we want as details only may have changed.
                     let
+                        filteredResults =
+                            --Preemptively remove less contentious stuff.
+                            List.filter
+                                (\summary ->
+                                    not <|
+                                        Set.member summary.application_type
+                                            (Set.fromList
+                                                [ "tree_works"
+                                                , "discharge_conditions"
+                                                , "lawful_development"
+                                                , "prior_approval"
+                                                , "other"
+                                                ]
+                                            )
+                                )
+                                value.data
+
                         updatedApplications =
+                            --Note that an updated Summary will displace an existing Detail;
+                            --this is what we want as details only may have changed.
                             List.foldl
                                 (\summary dict ->
                                     Dict.insert
@@ -181,10 +198,14 @@ update msg model =
                                         dict
                                 )
                                 model.applications
-                                value.data
+                                filteredResults
+
+                        _ =
+                            Debug.log "INCREMENTAL APPLICATIONS COUNT" model.applications
 
                         followUp : Maybe QueuedQuery
                         followUp =
+                            --If there's another page, queue up the next query.
                             if value.meta.page < value.meta.total_pages then
                                 Just { fetch | page = fetch.page + 1 }
 

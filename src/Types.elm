@@ -177,22 +177,25 @@ type ConstraintType
 
    Standard Processing States (according to Haiku)
 
-   Received:	Application has been submitted and registered on the council's system
-   Invalid:	Application lacks required information or documentation and has been rejected for resubmission
-   Validation in Progress:	Council is checking whether the application is complete and valid
-   Under Consideration:	Application is being assessed by planning officers (the main processing period)
-   Consultation:	Application is out for public consultation or third-party responses
-   Determined:	A planning decision has been made (either approved, refused, or approved with conditions)
-   Withdrawn:	Applicant has requested to withdraw the application
-   Lapsed:	Application has expired without determination
+   Received: Application has been submitted and registered on the council's system
+   Invalid: Application lacks required information or documentation and has been rejected for resubmission
+   Validation in Progress: Council is checking whether the application is complete and valid
+   Under Consideration: Application is being assessed by planning officers (the main processing period)
+   Consultation: Application is out for public consultation or third-party responses
+   Determined: A planning decision has been made (either approved, refused, or approved with conditions)
+   Withdrawn: Applicant has requested to withdraw the application
+   Lapsed: Application has expired without determination
 
    Harrow Council's Process Overview
 
-   Submission and Registration – Application is received and registered once all documents and payments are confirmed
-   Validation – Harrow has 8 weeks to determine if your application is valid (13 weeks for large or complex applications)
+   Submission and Registration – Application is received and registered once all
+    documents and payments are confirmed
+   Validation – Harrow has 8 weeks to determine if your application is valid
+   (13 weeks for large or complex applications)
    Assessment – Planning officers assess the application and may conduct site visits
    Consultation – Public consultation feedback is considered
-   Recommendation and Decision – The case officer recommends approval or refusal, and the decision is made either by delegated powers (99% of applications) or the planning committee
+   Recommendation and Decision – The case officer recommends approval or refusal,
+   and the decision is made either by delegated powers (99% of applications) or the planning committee
 -}
 
 
@@ -218,6 +221,42 @@ type Outcome
     = Approved
     | Refused
     | Conditional
+
+
+
+{-
+   In a similar vein, application types need filtering ...
+   (looks like Harrow uses the snake_case variants but can we be sure?
+
+   "other",
+   "householder",
+   "full_planning",
+   "tree_works",
+   "discharge_conditions",
+   "change_of_use",
+   "listed_building",
+   "advertisement",
+   "outline_planning",
+   "lawful_development",
+   "prior_approval",
+   "reserved_matters",
+   "pre_application",
+   "environmental_impact",
+   "Full",
+   "Outline",
+   "Reserved Matters",
+   "Prior Approval",
+   "Listed Building Consent",
+   "Advertisement Consent",
+   "Conservation Area Consent",
+   "Discharge of Conditions",
+   "Tree Works",
+   "Certificate of Lawfulness",
+   "Change of Use",
+   "Non-Material Amendment",
+   "Variation of Condition",
+   "Hazardous Substances",
+-}
 
 
 type Application

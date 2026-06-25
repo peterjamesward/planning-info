@@ -131,9 +131,7 @@ view model =
                     , Element.paragraph [ spacing 5, Font.italic, Element.centerX ]
                         [ Element.text "There are currently "
                         , Element.text (String.fromInt <| Dict.size model.applications)
-                        , Element.text " visible applications in Harrow for HA7 postcodes. "
-                        , Element.el [ Font.italic ] <|
-                            Element.text "Each work day we request new applications for the previous four weeks."
+                        , Element.text " visible applications with special conditions in Harrow HA7 postcodes. "
                         ]
                     ]
     }
