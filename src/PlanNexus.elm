@@ -1,10 +1,13 @@
 module PlanNexus exposing (..)
 
+import DateUtils
 import Dict exposing (Dict)
 import Env
 import Http
+import Iso8601
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
+import Time
 import Types
 import Url.Builder as Builder
 
@@ -17,19 +20,58 @@ harrowUid =
     "ef340ad8-1a60-43a8-b741-2483f6919d3f"
 
 
-requestSummaries : String -> (Result Http.Error Types.Root -> msg) -> Cmd msg
-requestSummaries sinceDate msg =
+
+-- Added new parameter e.g. "changed_since=2026-06".
+-- Added paging and constraints.
+
+
+pagedConstrainedSummaries :
+    Types.QueuedQuery
+    -> (Result Http.Error Types.Root -> msg)
+    -> Cmd msg
+pagedConstrainedSummaries query msg =
+    let
+        constraintParameter =
+            case query.constraint of
+                Types.GreenBelt ->
+                    "in_green_belt"
+
+                Types.FloodRisk ->
+                    "in_flood_risk_zone"
+
+                Types.ConservationArea ->
+                    "in_conservation_area"
+
+                Types.TreePreservation ->
+                    "has_tpo"
+
+                Types.ListedBuilding ->
+                    "has_listed_building"
+
+                Types.Article4 ->
+                    "in_article_4"
+
+                Types.AONB ->
+                    "in_aonb"
+
+                Types.SSSI ->
+                    "has_sssi"
+    in
     Http.request
         { method = "GET"
         , headers = [ Http.header "X-Api-Key" Env.plannexusApiKey ]
         , url =
-            Builder.crossOrigin plannexus
-                [ "v1", "applications" ]
-                [ Builder.string "postcode" "HA7"
-                , Builder.string "authority_id" harrowUid
-                , Builder.string "date_received_from" sinceDate
-                , Builder.int "per_page" 100
-                ]
+            Debug.log "URL" <|
+                Builder.crossOrigin plannexus
+                    [ "v1", "applications" ]
+                    [ Builder.string "postcode" "HA7"
+                    , Builder.string "authority_id" harrowUid
+                    , Builder.string constraintParameter "true"
+                    , Builder.string "changed_since" (DateUtils.dateFromPosix query.sinceDate)
+                    , Builder.string "date_received_from" (DateUtils.dateFromPosix <| DateUtils.oneYearBefore query.sinceDate)
+                    , Builder.int "per_page" 100
+                    , Builder.int "page" query.page
+                    ]
         , body = Http.emptyBody
         , expect = Http.expectJson msg rootDecoder
         , timeout = Nothing
@@ -104,13 +146,6 @@ detailDecoder =
         |> Pipeline.optionalAt [ "constraints", "summary", "conservation_area", "label" ] Decode.string ""
         |> Pipeline.optionalAt [ "constraints", "summary", "tree_preservation_zone", "present", "label" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "listed_building_outline", "label" ] Decode.string ""
-        |> Pipeline.optionalAt [ "constraints", "summary", "article_4_direction_area", "label" ] Decode.string ""
+        |> Pipeline.optionalAt [ "constraints", "summary", "article_4_direction_area", "present" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "area_of_outstanding_natural_beauty", "present" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "site_of_special_scientific_interest", "present" ] Decode.bool False
-
-
-summariesAsDict : List Types.Summary -> Dict String Types.Application
-summariesAsDict summaryList =
-    summaryList
-        |> List.map (\summary -> ( summary.id, Types.ApplicationSummary summary ))
-        |> Dict.fromList

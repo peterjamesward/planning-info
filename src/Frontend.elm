@@ -317,7 +317,11 @@ viewApplication application =
               else
                 ""
             , detail.listed_building_outline
-            , detail.article_4_direction_area
+            , if detail.article_4_direction_area then
+                "Article 4"
+
+              else
+                ""
             , if detail.area_of_outstanding_natural_beauty then
                 "AONB"
 

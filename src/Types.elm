@@ -3,13 +3,10 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Dict exposing (Dict)
+import Fifo
 import Http
 import Time
 import Url exposing (Url)
-
-
-
---TODO: API keys in config.
 
 
 type alias Root =
@@ -139,10 +136,88 @@ type alias Detail =
     , conservation_area : String
     , tree_preservation_zone : Bool
     , listed_building_outline : String
-    , article_4_direction_area : String
+    , article_4_direction_area : Bool
     , area_of_outstanding_natural_beauty : Bool
     , site_of_special_scientific_interest : Bool
     }
+
+
+type ConstraintType
+    = GreenBelt
+    | FloodRisk
+    | ConservationArea
+    | TreePreservation
+    | ListedBuilding
+    | Article4
+    | AONB
+    | SSSI
+
+
+
+{- These are all possible status values from applications/facets API, across councils.
+   May help with retention.
+      "value": "decided",
+      "value": "received",
+      "value": "withdrawn",
+      "value": "pending_consideration",
+      "value": "validated",
+      "value": "consultation",
+      "value": "pending_decision",
+      "value": "appeal",
+      "value": "returned",
+      "value": "Approved",
+      "value": "Granted",
+      "value": "Permitted",
+      "value": "Refused",
+      "value": "Pending Consideration",
+      "value": "Registered",
+      "value": "Under Consideration",
+      "value": "Awaiting Decision",
+      "value": "Appealed",
+
+   Standard Processing States (according to Haiku)
+
+   Received:	Application has been submitted and registered on the council's system
+   Invalid:	Application lacks required information or documentation and has been rejected for resubmission
+   Validation in Progress:	Council is checking whether the application is complete and valid
+   Under Consideration:	Application is being assessed by planning officers (the main processing period)
+   Consultation:	Application is out for public consultation or third-party responses
+   Determined:	A planning decision has been made (either approved, refused, or approved with conditions)
+   Withdrawn:	Applicant has requested to withdraw the application
+   Lapsed:	Application has expired without determination
+
+   Harrow Council's Process Overview
+
+   Submission and Registration – Application is received and registered once all documents and payments are confirmed
+   Validation – Harrow has 8 weeks to determine if your application is valid (13 weeks for large or complex applications)
+   Assessment – Planning officers assess the application and may conduct site visits
+   Consultation – Public consultation feedback is considered
+   Recommendation and Decision – The case officer recommends approval or refusal, and the decision is made either by delegated powers (99% of applications) or the planning committee
+-}
+
+
+type ApplicationStatus
+    = Submission Preamble
+    | Process Processing
+    | Decided Outcome
+
+
+type Preamble
+    = Submitted
+    | Accepted
+    | Returned
+    | Withdrawn
+
+
+type Processing
+    = UnderConsideration
+    | InConsultation
+
+
+type Outcome
+    = Approved
+    | Refused
+    | Conditional
 
 
 type Application
@@ -162,7 +237,16 @@ type alias BackendModel =
     , lastError : Maybe Http.Error
     , lastFetch : Time.Posix
     , currentTime : Time.Posix
-    , pendingDetail : List String
+    , queuedFetches : Fifo.Fifo QueuedQuery
+    , pendingFetch : Maybe QueuedQuery
+    }
+
+
+type alias QueuedQuery =
+    -- Use this to throttle and debounce the backend HTTP calls to Plannexus.
+    { sinceDate : Time.Posix
+    , constraint : ConstraintType
+    , page : Int
     }
 
 
@@ -180,7 +264,7 @@ type ToBackend
 
 type BackendMsg
     = NoOpBackendMsg
-    | GotSummaries (Result Http.Error Root)
+    | GotSummaries QueuedQuery (Result Http.Error Root)
     | HourTicker Time.Posix
     | SevenSecondTicker Time.Posix
     | GotDetail (Result Http.Error Detail)
