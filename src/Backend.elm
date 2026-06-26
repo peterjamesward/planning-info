@@ -2,6 +2,7 @@ module Backend exposing (..)
 
 import DateUtils exposing (isWorkday, oneDay, oneYear)
 import Dict
+import Dict.Extra
 import Fifo
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
@@ -84,6 +85,7 @@ update msg model =
             --Fetch after 24 hours on working days only.
             --Use query queue to throttle and debounce.
             --Do nothing if we're already loading!
+            --TODO: Remove anything closed or withdrawn more than a month ago.
             let
                 moreThanOneDaySinceLastFetch =
                     Time.posixToMillis now - Time.posixToMillis model.lastFetch > oneDay
@@ -148,19 +150,14 @@ update msg model =
 
                     else
                         -- We have some applications; make sure they all have details (slowly).
-                        --TODO: Don't want filter, want find (though this is optimisation)!
-                        case
-                            model.applications
-                                |> Dict.filter isSummary
-                                |> Dict.keys
-                        of
-                            summaryApplication :: _ ->
+                        case Dict.Extra.find isSummary model.applications of
+                            Just ( id, summaryApplication ) ->
                                 -- We don't queue these requests, only the bulk load.
                                 ( { model | currentTime = now }
-                                , PlanNexus.requestDetail summaryApplication GotDetail
+                                , PlanNexus.requestDetail id GotDetail
                                 )
 
-                            [] ->
+                            Nothing ->
                                 -- We have all the details, take a rest.
                                 ( { model | currentTime = now }
                                 , Cmd.none

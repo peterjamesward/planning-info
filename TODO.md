@@ -4,21 +4,15 @@
 
 ## TODO
 
-Better decoding of various constraints as only some have "label" but others have text in detail.
-
-~~Filter out tree_works and similar?~~
-
-Decode status to our internal types.
-
-Wait for details before sending to front end.
-
-~~Colour code constraint indicators.~~
-
-Colour code status indicators.
+Incrementally send details only to frontend?
 
 Retention: Remove anything closed for more than a month.
 
-Hide Google Maps API key.
+Full history.
 
-Full history &c for specials.
+Handle a 429 error code for quota ...
+> If you exceed 10 requests per minute or your monthly quota, the API returns 429 Too Many Requests with a Retry-After header indicating when to try again.
+> See https://package.elm-lang.org/packages/elm/http/latest/Http#expectStringResponse
+
+Hide Google Maps API key.
 
