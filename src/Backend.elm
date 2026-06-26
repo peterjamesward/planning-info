@@ -38,6 +38,7 @@ init =
       , currentTime = Time.millisToPosix 0
       , queuedFetches = Fifo.empty
       , pendingFetch = Nothing
+      , summariesPendingDetail = False
       }
     , Task.perform HourTicker Time.now
     )
@@ -148,7 +149,7 @@ update msg model =
                         , Cmd.none
                         )
 
-                    else
+                    else if model.summariesPendingDetail then
                         -- We have some applications; make sure they all have details (slowly).
                         case Dict.Extra.find isSummary model.applications of
                             Just ( id, summaryApplication ) ->
@@ -159,9 +160,15 @@ update msg model =
 
                             Nothing ->
                                 -- We have all the details, take a rest.
-                                ( { model | currentTime = now }
+                                ( { model
+                                    | currentTime = now
+                                    , summariesPendingDetail = False
+                                  }
                                 , Cmd.none
                                 )
+
+                    else
+                        ( model, Cmd.none )
 
         GotSummaries fetch result ->
             case result of
@@ -221,6 +228,7 @@ update msg model =
                                 Nothing ->
                                     model.queuedFetches
                         , pendingFetch = Nothing
+                        , summariesPendingDetail = True
                       }
                     , Lamdera.broadcast (CachedApplications updatedApplications)
                     )

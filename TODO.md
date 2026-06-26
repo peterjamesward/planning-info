@@ -16,3 +16,9 @@ Handle a 429 error code for quota ...
 
 Hide Google Maps API key.
 
+## Optimisations
+
+~~Once we have all the details, there is no point scanning the whole Dict every 7 seconds!~~
+
+
+

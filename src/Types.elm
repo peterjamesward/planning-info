@@ -278,6 +278,7 @@ type alias BackendModel =
     , currentTime : Time.Posix
     , queuedFetches : Fifo.Fifo QueuedQuery
     , pendingFetch : Maybe QueuedQuery
+    , summariesPendingDetail : Bool
     }
 
 
