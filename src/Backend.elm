@@ -3,8 +3,6 @@ module Backend exposing (..)
 import Applications exposing (isPurgeable)
 import DateUtils exposing (isWorkday, oneDay, oneYear)
 import Dict
-import Dict.Extra
-import Fifo
 import Iso8601
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus

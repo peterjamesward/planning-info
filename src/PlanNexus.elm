@@ -1,10 +1,8 @@
 module PlanNexus exposing (..)
 
 import DateUtils
-import Dict exposing (Dict)
 import Env
 import Http
-import Iso8601
 import Json.Decode as Decode
 import Json.Decode.Pipeline as Pipeline
 import Time

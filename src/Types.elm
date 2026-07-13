@@ -161,17 +161,6 @@ type alias StateChange =
     }
 
 
-type ConstraintType
-    = GreenBelt
-    | FloodRisk
-    | ConservationArea
-    | TreePreservation
-    | ListedBuilding
-    | Article4
-    | AONB
-    | SSSI
-
-
 
 {- These are all possible status values from applications/facets API, across councils.
    May help with retention.
@@ -216,33 +205,6 @@ type ConstraintType
    Recommendation and Decision – The case officer recommends approval or refusal,
    and the decision is made either by delegated powers (99% of applications) or the planning committee
 -}
-
-
-type ApplicationStatus
-    = Submission Preamble
-    | Process Processing
-    | Decided Outcome
-
-
-type Preamble
-    = Submitted
-    | Accepted
-    | Returned
-    | Withdrawn
-
-
-type Processing
-    = UnderConsideration
-    | InConsultation
-
-
-type Outcome
-    = Approved
-    | Refused
-    | Conditional
-
-
-
 {-
    In a similar vein, application types need filtering ...
    (looks like Harrow uses the snake_case variants but can we be sure?

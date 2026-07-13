@@ -1,6 +1,5 @@
 module DateUtils exposing (..)
 
-import String.Interpolate
 import Time
 
 
