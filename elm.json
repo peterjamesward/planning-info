@@ -23,7 +23,8 @@
             "lamdera/core": "1.0.0",
             "lukewestby/elm-string-interpolate": "1.0.4",
             "mdgriffith/elm-ui": "1.1.8",
-            "rtfeldman/elm-iso8601-date-strings": "1.1.4"
+            "rtfeldman/elm-iso8601-date-strings": "1.1.4",
+            "turboMaCk/queue": "1.2.0"
         },
         "indirect": {
             "elm/file": "1.0.5",

@@ -3,9 +3,8 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Dict exposing (Dict)
-import Fifo exposing (Fifo)
 import Http
-import Set exposing (Set)
+import Queue exposing (Queue)
 import Time
 import Url exposing (Url)
 
@@ -296,7 +295,7 @@ type alias BackendModel =
     , lastError : Maybe Http.Error
     , lastFetch : Time.Posix
     , currentTime : Time.Posix
-    , queryQueue : Fifo QueuedQuery
+    , queryQueue : Queue QueuedQuery
     }
 
 

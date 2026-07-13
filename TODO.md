@@ -1,13 +1,18 @@
 
 ## BUGS
 
-Should start from no earlier than "two years ago".
-
 ## TODO
+
+Look at application types and possibly preemptively filter.
 
 UI should be clearer when Harrow URL is not available.
 
+Paragraph wrap the status line and the description.
+
 Need to test purging!
+
+Pause queue ticker when queue is emptied. 
+Restart after incremental fix.
 
 Apply colour and text formatting to decision. (More like a rubber stamp?)
 > Need to know which values there are and choose colours.

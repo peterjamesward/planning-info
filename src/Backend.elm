@@ -8,6 +8,7 @@ import Fifo
 import Iso8601
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
+import Queue
 import Set
 import Task
 import Time
@@ -26,11 +27,14 @@ app =
         , updateFromFrontend = updateFromFrontend
         , subscriptions =
             \m ->
-                Sub.batch
-                    [ Time.every DateUtils.oneHour BackgroundFetchTicker
-                    , Time.every DateUtils.oneDay BackgroundPurgeTicker
-                    , Time.every 1200 TickerToThrottleApiCalls
-                    ]
+                if Queue.isEmpty m.queryQueue then
+                    Sub.batch
+                        [ Time.every DateUtils.oneHour BackgroundFetchTicker
+                        , Time.every DateUtils.oneDay BackgroundPurgeTicker
+                        ]
+
+                else
+                    Time.every 1200 TickerToThrottleApiCalls
         }
 
 
@@ -40,7 +44,7 @@ init =
       , lastError = Nothing
       , lastFetch = Time.millisToPosix 0
       , currentTime = Time.millisToPosix 0
-      , queryQueue = Fifo.empty
+      , queryQueue = Queue.empty
       }
     , Task.perform BackgroundFetchTicker Time.now
     )
@@ -62,9 +66,9 @@ update msg model =
         moreThanOneDaySinceLastFetch =
             Time.posixToMillis model.currentTime - Time.posixToMillis model.lastFetch > oneDay
 
-        fetchSince =
+        fetchSince current =
             DateUtils.mostRecent
-                (DateUtils.oneYearBefore model.currentTime)
+                (DateUtils.oneYearBefore current)
                 model.lastFetch
     in
     case msg of
@@ -87,8 +91,8 @@ update msg model =
                 ( { model
                     | currentTime = now
                     , queryQueue =
-                        Fifo.insert
-                            (SummaryQuery { sinceDate = fetchSince, page = 1 })
+                        Queue.enqueue
+                            (SummaryQuery { sinceDate = fetchSince now, page = 1 })
                             model.queryQueue
                   }
                 , Cmd.none
@@ -103,7 +107,7 @@ update msg model =
             -- All we do here is dispatch the next queued query.
             let
                 ( query, tail ) =
-                    Fifo.remove model.queryQueue
+                    Queue.dequeue model.queryQueue
 
                 action =
                     case query of
@@ -158,7 +162,7 @@ update msg model =
 
                         queueWithOptionalNextPageQuery =
                             if value.meta.page < value.meta.total_pages then
-                                Fifo.insert
+                                Queue.enqueue
                                     (SummaryQuery { fetch | page = fetch.page + 1 })
                                     model.queryQueue
 
@@ -169,8 +173,8 @@ update msg model =
                             List.foldl
                                 (\summary queue ->
                                     queue
-                                        |> Fifo.insert (DetailQuery summary.id)
-                                        |> Fifo.insert (HistoryQuery summary.id)
+                                        |> Queue.enqueue (DetailQuery summary.id)
+                                        |> Queue.enqueue (HistoryQuery summary.id)
                                 )
                                 queueWithOptionalNextPageQuery
                                 filteredResults
