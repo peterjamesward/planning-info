@@ -20,43 +20,11 @@ harrowUid =
     "ef340ad8-1a60-43a8-b741-2483f6919d3f"
 
 
-
--- Added new parameter e.g. "changed_since=2026-06".
--- Added paging and constraints.
-
-
-pagedConstrainedSummaries :
-    Types.QueuedQuery
+pagedSummaries :
+    Types.QueuedSummaryQuery
     -> (Result Http.Error Types.Root -> msg)
     -> Cmd msg
-pagedConstrainedSummaries query msg =
-    let
-        constraintParameter =
-            case query.constraint of
-                Types.GreenBelt ->
-                    "in_green_belt"
-
-                Types.FloodRisk ->
-                    "in_flood_risk_zone"
-
-                Types.ConservationArea ->
-                    "in_conservation_area"
-
-                Types.TreePreservation ->
-                    "has_tpo"
-
-                Types.ListedBuilding ->
-                    "has_listed_building"
-
-                Types.Article4 ->
-                    "in_article_4"
-
-                Types.AONB ->
-                    "in_aonb"
-
-                Types.SSSI ->
-                    "has_sssi"
-    in
+pagedSummaries query msg =
     Http.request
         { method = "GET"
         , headers = [ Http.header "X-Api-Key" Env.plannexusApiKey ]
@@ -66,7 +34,6 @@ pagedConstrainedSummaries query msg =
                     [ "v1", "applications" ]
                     [ Builder.string "postcode" "HA7"
                     , Builder.string "authority_id" harrowUid
-                    , Builder.string constraintParameter "true"
                     , Builder.string "changed_since" (DateUtils.dateFromPosix query.sinceDate)
                     , Builder.string "date_received_from" (DateUtils.dateFromPosix <| DateUtils.oneYearBefore query.sinceDate)
                     , Builder.int "per_page" 100
@@ -90,6 +57,22 @@ requestDetail id msg =
                 []
         , body = Http.emptyBody
         , expect = Http.expectJson msg detailDecoder
+        , timeout = Nothing
+        , tracker = Nothing
+        }
+
+
+requestHistory : String -> (Result Http.Error (List Types.StateChange) -> msg) -> Cmd msg
+requestHistory id msg =
+    Http.request
+        { method = "GET"
+        , headers = [ Http.header "X-Api-Key" Env.plannexusApiKey ]
+        , url =
+            Builder.crossOrigin plannexus
+                [ "v1", "applications", id, "history" ]
+                []
+        , body = Http.emptyBody
+        , expect = Http.expectJson msg historyDecoder
         , timeout = Nothing
         , tracker = Nothing
         }
@@ -120,13 +103,14 @@ dataDecoder =
         |> Pipeline.required "application_type" Decode.string
         |> Pipeline.required "status" Decode.string
         |> Pipeline.required "authority_name" Decode.string
-        |> Pipeline.required "date_received" Decode.string
+        |> Pipeline.optional "date_received" Decode.string ""
         |> Pipeline.optional "latitude" Decode.float 0.0
         |> Pipeline.optional "longitude" Decode.float 0.0
 
 
 detailDecoder : Decode.Decoder Types.Detail
 detailDecoder =
+    --N.B. Rely on subsequent history call to set lastChangeDate.
     Decode.succeed Types.Detail
         |> Pipeline.required "id" Decode.string
         |> Pipeline.required "reference" Decode.string
@@ -135,7 +119,7 @@ detailDecoder =
         |> Pipeline.required "application_type" Decode.string
         |> Pipeline.required "status" Decode.string
         |> Pipeline.optional "decision" Decode.string ""
-        |> Pipeline.required "date_received" Decode.string
+        |> Pipeline.optional "date_received" Decode.string ""
         |> Pipeline.optional "decision_date" Decode.string ""
         |> Pipeline.optional "latitude" Decode.float 0.0
         |> Pipeline.optional "longitude" Decode.float 0.0
@@ -149,3 +133,17 @@ detailDecoder =
         |> Pipeline.optionalAt [ "constraints", "summary", "article_4_direction_area", "present" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "area_of_outstanding_natural_beauty", "present" ] Decode.bool False
         |> Pipeline.optionalAt [ "constraints", "summary", "site_of_special_scientific_interest", "present" ] Decode.bool False
+        |> Pipeline.hardcoded (Time.millisToPosix 0)
+
+
+historyDecoder : Decode.Decoder (List Types.StateChange)
+historyDecoder =
+    Decode.list stateChangeDecoder
+
+
+stateChangeDecoder : Decode.Decoder Types.StateChange
+stateChangeDecoder =
+    Decode.succeed Types.StateChange
+        |> Pipeline.required "id" Decode.string
+        |> Pipeline.required "status" Decode.string
+        |> Pipeline.required "detected_at" Decode.string

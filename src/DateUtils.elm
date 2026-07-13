@@ -1,11 +1,20 @@
 module DateUtils exposing (..)
 
+import String.Interpolate
 import Time
 
 
 oneDay =
     -- A day's worth of milliseconds.
     24 * 3600 * 1000
+
+
+oneHour =
+    3600 * 1000
+
+
+fourWeeks =
+    oneDay * 28
 
 
 oneYear =
@@ -107,3 +116,8 @@ isWorkday p =
 
         Time.Sun ->
             False
+
+
+olderThanFourWeeks : Time.Posix -> Time.Posix -> Bool
+olderThanFourWeeks now candidate =
+    Time.posixToMillis now - Time.posixToMillis candidate > fourWeeks

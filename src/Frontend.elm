@@ -2,6 +2,7 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
+import DateUtils
 import Dict exposing (Dict)
 import Element exposing (Element, alignLeft, alignRight, centerX, centerY, el, fill, fillPortion, padding, rgb255, rgba255, row, spacing, text, width)
 import Element.Background as Background
@@ -101,6 +102,25 @@ updateFromBackend msg model =
             ( { model
                 | applications =
                     Dict.insert id application model.applications
+              }
+            , Cmd.none
+            )
+
+        PurgeApplications ids ->
+            ( { model
+                | applications =
+                    List.foldl (\purge dict -> Dict.remove purge dict) model.applications ids
+                , selected =
+                    case model.selected of
+                        Just select ->
+                            if List.member select ids then
+                                Nothing
+
+                            else
+                                model.selected
+
+                        Nothing ->
+                            Nothing
               }
             , Cmd.none
             )
@@ -278,6 +298,7 @@ viewApplication application =
 
         asDetail : Detail -> Element FrontendMsg
         asDetail detail =
+            --TODO: Decision!
             Element.column [ spacing 4 ]
                 [ Element.el [ Font.bold ] <| Element.text detail.reference
                 , Element.paragraph [] [ Element.text detail.address ]
@@ -292,7 +313,21 @@ viewApplication application =
                     [ Font.light, spacing 10 ]
                     [ Element.text detail.application_type
                     , Element.text detail.status
-                    , Element.text detail.date_received
+                    , case detail.decision of
+                        "" ->
+                            Element.none
+
+                        _ ->
+                            Element.el
+                                [ Font.family
+                                    [ Font.typeface "Impact"
+                                    , Font.sansSerif
+                                    ]
+                                , Font.size 24
+                                , Element.rotate 0.1
+                                ]
+                                (Element.text detail.decision)
+                    , Element.text <| DateUtils.dateFromPosix detail.lastChangeDate
                     ]
                 ]
 

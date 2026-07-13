@@ -3,8 +3,9 @@ module Types exposing (..)
 import Browser exposing (UrlRequest)
 import Browser.Navigation exposing (Key)
 import Dict exposing (Dict)
-import Fifo
+import Fifo exposing (Fifo)
 import Http
+import Set exposing (Set)
 import Time
 import Url exposing (Url)
 
@@ -139,6 +140,25 @@ type alias Detail =
     , article_4_direction_area : Bool
     , area_of_outstanding_natural_beauty : Bool
     , site_of_special_scientific_interest : Bool
+    , lastChangeDate : Time.Posix
+
+    --, state_history : List StateChange
+    }
+
+
+type alias StateChange =
+    {- NOTE: status_date is not populated, use detected_at as proxy.
+       {
+           "id": "7b088647-49c7-4f17-b2d8-45c0dea18b78",
+           "status": "pending_consideration",
+           "status_date": null,
+           "notes": "Changed from received to pending_consideration",
+           "detected_at": "2026-07-09T23:08:15.330966Z"
+       }
+    -}
+    { id : String
+    , status : String
+    , effective : String
     }
 
 
@@ -276,18 +296,27 @@ type alias BackendModel =
     , lastError : Maybe Http.Error
     , lastFetch : Time.Posix
     , currentTime : Time.Posix
-    , queuedFetches : Fifo.Fifo QueuedQuery
-    , pendingFetch : Maybe QueuedQuery
-    , summariesPendingDetail : Bool
+    , queryQueue : Fifo QueuedQuery
     }
 
 
-type alias QueuedQuery =
-    -- Use this to throttle and debounce the backend HTTP calls to Plannexus.
+type alias QueuedSummaryQuery =
     { sinceDate : Time.Posix
-    , constraint : ConstraintType
     , page : Int
     }
+
+
+type
+    QueuedQuery
+    {- Possible queries are
+       1. Give me all changes <since time>, <paged>
+       2. Give me full detail of <id>
+       3. Give me full history of <id> (though not sure I need this now detail is stable)
+       All queries will use the queueing mechanism to respect the rate limit.
+    -}
+    = SummaryQuery QueuedSummaryQuery
+    | DetailQuery String
+    | HistoryQuery String
 
 
 type FrontendMsg
@@ -304,13 +333,16 @@ type ToBackend
 
 type BackendMsg
     = NoOpBackendMsg
-    | GotSummaries QueuedQuery (Result Http.Error Root)
-    | HourTicker Time.Posix
-    | SevenSecondTicker Time.Posix
+    | GotSummaries QueuedSummaryQuery (Result Http.Error Root)
+    | BackgroundFetchTicker Time.Posix
+    | BackgroundPurgeTicker Time.Posix
+    | TickerToThrottleApiCalls Time.Posix
     | GotDetail (Result Http.Error Detail)
+    | GotHistory String (Result Http.Error (List StateChange))
 
 
 type ToFrontend
     = NoOpToFrontend
     | CachedApplications (Dict String Application)
     | CachedApplication Application
+    | PurgeApplications (List String)

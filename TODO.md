@@ -1,14 +1,23 @@
 
 ## BUGS
 
+Should start from no earlier than "two years ago".
 
 ## TODO
 
-Incrementally send details only to frontend?
+UI should be clearer when Harrow URL is not available.
 
-Retention: Remove anything closed for more than a month.
+Need to test purging!
 
-Full history.
+Apply colour and text formatting to decision. (More like a rubber stamp?)
+> Need to know which values there are and choose colours.
+
+## Backlog
+
+Post an email when a new HA7 submission arrives, maybe any state change,
+as determined by a new history entry not just a timestamp.
+https://github.com/MartinSStewart/elm-email
+(Postmark is free for 100/month.)
 
 Handle a 429 error code for quota ...
 > If you exceed 10 requests per minute or your monthly quota, the API returns 429 Too Many Requests with a Retry-After header indicating when to try again.
@@ -17,8 +26,4 @@ Handle a 429 error code for quota ...
 Hide Google Maps API key.
 
 ## Optimisations
-
-~~Once we have all the details, there is no point scanning the whole Dict every 7 seconds!~~
-
-
 

@@ -1,9 +1,11 @@
 module Backend exposing (..)
 
+import Applications exposing (isPurgeable)
 import DateUtils exposing (isWorkday, oneDay, oneYear)
 import Dict
 import Dict.Extra
 import Fifo
+import Iso8601
 import Lamdera exposing (ClientId, SessionId, sendToFrontend)
 import PlanNexus
 import Set
@@ -17,6 +19,7 @@ type alias Model =
 
 
 app =
+    --NB Reducing interval to 1.2 seconds to allow for at 60/minute.
     Lamdera.backend
         { init = init
         , update = update
@@ -24,8 +27,9 @@ app =
         , subscriptions =
             \m ->
                 Sub.batch
-                    [ Time.every (3600 * 1000) HourTicker
-                    , Time.every (8 * 1000) SevenSecondTicker
+                    [ Time.every DateUtils.oneHour BackgroundFetchTicker
+                    , Time.every DateUtils.oneDay BackgroundPurgeTicker
+                    , Time.every 1200 TickerToThrottleApiCalls
                     ]
         }
 
@@ -36,11 +40,9 @@ init =
       , lastError = Nothing
       , lastFetch = Time.millisToPosix 0
       , currentTime = Time.millisToPosix 0
-      , queuedFetches = Fifo.empty
-      , pendingFetch = Nothing
-      , summariesPendingDetail = False
+      , queryQueue = Fifo.empty
       }
-    , Task.perform HourTicker Time.now
+    , Task.perform BackgroundFetchTicker Time.now
     )
 
 
@@ -57,51 +59,37 @@ isSummary id application =
 update : BackendMsg -> Model -> ( Model, Cmd BackendMsg )
 update msg model =
     let
-        batchOfFetches since =
-            [ Types.GreenBelt
-            , Types.FloodRisk
-            , Types.ConservationArea
-            , Types.TreePreservation
-            , Types.ListedBuilding
-            , Types.Article4
-            , Types.AONB
-            , Types.SSSI
-            ]
-                |> List.foldl
-                    (\constraint fifo ->
-                        Fifo.insert
-                            { sinceDate = since
-                            , constraint = constraint
-                            , page = 1
-                            }
-                            fifo
-                    )
-                    Fifo.empty
+        moreThanOneDaySinceLastFetch =
+            Time.posixToMillis model.currentTime - Time.posixToMillis model.lastFetch > oneDay
+
+        fetchSince =
+            DateUtils.mostRecent
+                (DateUtils.oneYearBefore model.currentTime)
+                model.lastFetch
     in
     case msg of
         NoOpBackendMsg ->
             ( model, Cmd.none )
 
-        HourTicker now ->
-            --Fetch after 24 hours on working days only.
-            --Use query queue to throttle and debounce.
-            --Do nothing if we're already loading!
-            --TODO: Remove anything closed or withdrawn more than a month ago.
+        BackgroundPurgeTicker now ->
+            --Each day, remove applications that are in some closed state for more than one month (say).
             let
-                moreThanOneDaySinceLastFetch =
-                    Time.posixToMillis now - Time.posixToMillis model.lastFetch > oneDay
-
-                noQueuedFetches =
-                    List.isEmpty (Fifo.toList model.queuedFetches)
-
-                fetchSince =
-                    DateUtils.mostRecent
-                        (DateUtils.oneYearBefore now)
-                        model.lastFetch
+                ( purged, remaining ) =
+                    Dict.partition (isPurgeable now) model.applications
             in
-            if moreThanOneDaySinceLastFetch && isWorkday now && noQueuedFetches then
+            ( { model | applications = remaining }
+            , Lamdera.broadcast (PurgeApplications (Dict.keys purged))
+            )
+
+        BackgroundFetchTicker now ->
+            if Dict.isEmpty model.applications || moreThanOneDaySinceLastFetch then
+                --Incremental fetch after 24 hours or if we have none at all.
                 ( { model
-                    | queuedFetches = batchOfFetches fetchSince
+                    | currentTime = now
+                    , queryQueue =
+                        Fifo.insert
+                            (SummaryQuery { sinceDate = fetchSince, page = 1 })
+                            model.queryQueue
                   }
                 , Cmd.none
                 )
@@ -111,64 +99,29 @@ update msg model =
                 , Cmd.none
                 )
 
-        SevenSecondTicker now ->
-            --Throttle and debounce API calls.
-            --If we have pending fetches, dispatch exactly one of them.
-            --If we have some summaries, fetch detail for any one.
-            --If we have no Applications, queue up fetches for them all.
-            --Message needs to have fetch context for paging to work.
-            --Note that queueing avoids the situation where a response
-            --taking > 7 seconds leads to a repeat query.
-            case ( model.pendingFetch, Fifo.remove model.queuedFetches ) of
-                ( Just pending, _ ) ->
-                    -- Just wait, no point stressing the API.
-                    ( { model | currentTime = now }
-                    , Cmd.none
-                    )
+        TickerToThrottleApiCalls now ->
+            -- All we do here is dispatch the next queued query.
+            let
+                ( query, tail ) =
+                    Fifo.remove model.queryQueue
 
-                ( Nothing, ( Just firstFetch, remainingFetches ) ) ->
-                    ( { model
-                        | currentTime = now
-                        , lastFetch = now
-                        , queuedFetches = remainingFetches
-                        , pendingFetch = Just firstFetch
-                      }
-                    , PlanNexus.pagedConstrainedSummaries
-                        (Debug.log "fetching" firstFetch)
-                        (GotSummaries firstFetch)
-                    )
+                action =
+                    case query of
+                        Just (SummaryQuery sq) ->
+                            PlanNexus.pagedSummaries sq (GotSummaries sq)
 
-                ( Nothing, ( Nothing, _ ) ) ->
-                    if Dict.isEmpty model.applications then
-                        -- Put all the query params into our new queue.
-                        -- In another seven seconds, the queries start executing.
-                        ( { model
-                            | queuedFetches = batchOfFetches (DateUtils.oneYearBefore now)
-                            , currentTime = now
-                          }
-                        , Cmd.none
-                        )
+                        Just (DetailQuery dq) ->
+                            PlanNexus.requestDetail dq GotDetail
 
-                    else if model.summariesPendingDetail then
-                        -- We have some applications; make sure they all have details (slowly).
-                        case Dict.Extra.find isSummary model.applications of
-                            Just ( id, summaryApplication ) ->
-                                -- We don't queue these requests, only the bulk load.
-                                ( { model | currentTime = now }
-                                , PlanNexus.requestDetail id GotDetail
-                                )
+                        Just (HistoryQuery hq) ->
+                            PlanNexus.requestHistory hq (GotHistory hq)
 
-                            Nothing ->
-                                -- We have all the details, take a rest.
-                                ( { model
-                                    | currentTime = now
-                                    , summariesPendingDetail = False
-                                  }
-                                , Cmd.none
-                                )
-
-                    else
-                        ( model, Cmd.none )
+                        Nothing ->
+                            Cmd.none
+            in
+            ( { model | queryQueue = tail }
+            , action
+            )
 
         GotSummaries fetch result ->
             case result of
@@ -184,7 +137,6 @@ update msg model =
                                                 [ "tree_works"
                                                 , "discharge_conditions"
                                                 , "lawful_development"
-                                                , "prior_approval"
                                                 , "other"
                                                 ]
                                             )
@@ -204,33 +156,32 @@ update msg model =
                                 model.applications
                                 filteredResults
 
-                        _ =
-                            Debug.log "INCREMENTAL APPLICATIONS COUNT" model.applications
-
-                        followUp : Maybe QueuedQuery
-                        followUp =
-                            --If there's another page, queue up the next query.
+                        queueWithOptionalNextPageQuery =
                             if value.meta.page < value.meta.total_pages then
-                                Just { fetch | page = fetch.page + 1 }
+                                Fifo.insert
+                                    (SummaryQuery { fetch | page = fetch.page + 1 })
+                                    model.queryQueue
 
                             else
-                                Nothing
+                                model.queryQueue
+
+                        queueWithDetailQueries =
+                            List.foldl
+                                (\summary queue ->
+                                    queue
+                                        |> Fifo.insert (DetailQuery summary.id)
+                                        |> Fifo.insert (HistoryQuery summary.id)
+                                )
+                                queueWithOptionalNextPageQuery
+                                filteredResults
                     in
                     ( { model
                         | applications = updatedApplications
                         , lastError = Nothing
                         , lastFetch = model.currentTime
-                        , queuedFetches =
-                            case followUp of
-                                Just nextPageQuery ->
-                                    Fifo.insert nextPageQuery model.queuedFetches
-
-                                Nothing ->
-                                    model.queuedFetches
-                        , pendingFetch = Nothing
-                        , summariesPendingDetail = True
+                        , queryQueue = queueWithDetailQueries
                       }
-                    , Lamdera.broadcast (CachedApplications updatedApplications)
+                    , Cmd.none
                     )
 
                 Err error ->
@@ -248,8 +199,43 @@ update msg model =
                                 model.applications
                         , lastError = Nothing
                       }
-                    , Lamdera.broadcast (CachedApplication (ApplicationDetail detail))
+                    , Cmd.none
                     )
+
+                Err error ->
+                    ( { model | lastError = Just error }
+                    , Cmd.none
+                    )
+
+        GotHistory id result ->
+            case result of
+                Ok history ->
+                    -- We use the history to get a reliable timestamp for updated details,
+                    -- because council portal does not reliably timestamp all state changes.
+                    case Dict.get id model.applications of
+                        Just (ApplicationDetail detail) ->
+                            let
+                                mostRecentEntry =
+                                    history
+                                        |> List.filterMap (.effective >> Iso8601.toTime >> Result.toMaybe)
+                                        |> List.map Time.posixToMillis
+                                        |> List.maximum
+                                        |> Maybe.withDefault 0
+                                        |> Time.millisToPosix
+
+                                timestampedDetail =
+                                    ApplicationDetail
+                                        { detail | lastChangeDate = mostRecentEntry }
+                            in
+                            ( { model
+                                | lastError = Nothing
+                                , applications = Dict.insert id timestampedDetail model.applications
+                              }
+                            , Lamdera.broadcast (CachedApplication timestampedDetail)
+                            )
+
+                        _ ->
+                            ( model, Cmd.none )
 
                 Err error ->
                     ( { model | lastError = Just error }
