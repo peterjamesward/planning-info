@@ -240,7 +240,7 @@ summaryView model =
                 |> Dict.filter (\id a -> withinLast30Days model.currentTime a.lastChangeDate)
 
         inProgress =
-            recentActivity
+            model.applications
                 |> Dict.filter (\id a -> a.status == "received" || a.status == "pending_consideration")
                 |> Dict.size
 

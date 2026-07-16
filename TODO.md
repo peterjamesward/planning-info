@@ -3,13 +3,6 @@
 
 ## TODO
 
-Change logic on constraint filter so any matches will work.
-
-Have an Activity tab which will fit well inside iframe, but links to Lamdera in a new browser window.
-> Need to create summary display of activity. 
-> Does this require retaining history?
-> No, just count received, pending, approved, rejected during last 30 days.
-
 Need to test purging!
 
 ## Backlog
