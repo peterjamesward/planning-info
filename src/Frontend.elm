@@ -68,7 +68,14 @@ init url key =
       , typeFilters = Set.empty
       , statusFilters = Set.empty
       , decisionFilters = Set.empty
-      , constraintFilters = Set.empty
+      , green_belt = False
+      , flood_risk_zone = False
+      , conservation_area = False
+      , tree_preservation_zone = False
+      , listed_building_outline = False
+      , article_4_direction_area = False
+      , area_of_outstanding_natural_beauty = False
+      , site_of_special_scientific_interest = False
       }
     , sendToBackend NewClient
     )
@@ -115,10 +122,26 @@ update msg model =
             , Cmd.none
             )
 
-        ToggleConstraintFilter string bool ->
-            ( { model | constraintFilters = toggleHelper string bool model.constraintFilters }
-            , Cmd.none
-            )
+        Flood_risk_zone_Toggle bool ->
+            ( { model | flood_risk_zone = bool }, Cmd.none )
+
+        Conservation_area_Toggle bool ->
+            ( { model | conservation_area = bool }, Cmd.none )
+
+        Tree_preservation_zone_Toggle bool ->
+            ( { model | tree_preservation_zone = bool }, Cmd.none )
+
+        Listed_building_outline_Toggle bool ->
+            ( { model | listed_building_outline = bool }, Cmd.none )
+
+        Article_4_direction_area_Toggle bool ->
+            ( { model | article_4_direction_area = bool }, Cmd.none )
+
+        Area_of_outstanding_natural_beauty_Toggle bool ->
+            ( { model | area_of_outstanding_natural_beauty = bool }, Cmd.none )
+
+        Site_of_special_scientific_interest_Toggle bool ->
+            ( { model | site_of_special_scientific_interest = bool }, Cmd.none )
 
 
 toggleHelper : String -> Bool -> Set String -> Set String
@@ -256,6 +279,26 @@ viewFilters model =
                     |> Set.toList
                     |> List.map (filterCheckbox msg current)
                 )
+
+        constraintFilters =
+            Element.column [ spacing 2 ]
+                [ constraintFilter "Flood risk" Flood_risk_zone_Toggle model.flood_risk_zone
+                , constraintFilter "Conservation area" Conservation_area_Toggle model.conservation_area
+                , constraintFilter "Tree preservation zone" Tree_preservation_zone_Toggle model.tree_preservation_zone
+                , constraintFilter "Listed building" Listed_building_outline_Toggle model.listed_building_outline
+                , constraintFilter "Article 4" Article_4_direction_area_Toggle model.article_4_direction_area
+                , constraintFilter "AONB" Area_of_outstanding_natural_beauty_Toggle model.area_of_outstanding_natural_beauty
+                , constraintFilter "SSSI" Site_of_special_scientific_interest_Toggle model.site_of_special_scientific_interest
+                ]
+
+        constraintFilter label msg current =
+            Input.checkbox
+                []
+                { onChange = msg
+                , icon = Input.defaultCheckbox
+                , checked = current
+                , label = Input.labelRight [] <| text label
+                }
     in
     Element.column
         [ Element.width fill
@@ -273,8 +316,7 @@ viewFilters model =
         [ applicationTypes
         , statuses
         , decisions
-
-        --TODO: Constraint filters.
+        , constraintFilters
         ]
 
 
@@ -410,7 +452,63 @@ viewApplications model =
                      else
                         List.filter (\a -> Set.member a.decision model.decisionFilters)
                     )
-                        (Dict.values model.applications)
+                    <|
+                        (if model.site_of_special_scientific_interest then
+                            List.filter (\a -> a.site_of_special_scientific_interest)
+
+                         else
+                            identity
+                        )
+                        <|
+                            (if model.listed_building_outline then
+                                List.filter (\a -> a.listed_building_outline /= "")
+
+                             else
+                                identity
+                            )
+                            <|
+                                (if model.area_of_outstanding_natural_beauty then
+                                    List.filter (\a -> a.area_of_outstanding_natural_beauty)
+
+                                 else
+                                    identity
+                                )
+                                <|
+                                    (if model.conservation_area then
+                                        List.filter (\a -> a.conservation_area /= "")
+
+                                     else
+                                        identity
+                                    )
+                                    <|
+                                        (if model.article_4_direction_area then
+                                            List.filter (\a -> a.article_4_direction_area)
+
+                                         else
+                                            identity
+                                        )
+                                        <|
+                                            (if model.flood_risk_zone then
+                                                List.filter (\a -> a.flood_risk_zone /= "")
+
+                                             else
+                                                identity
+                                            )
+                                            <|
+                                                (if model.green_belt then
+                                                    List.filter (\a -> a.green_belt)
+
+                                                 else
+                                                    identity
+                                                )
+                                                <|
+                                                    (if model.tree_preservation_zone then
+                                                        List.filter (\a -> a.tree_preservation_zone)
+
+                                                     else
+                                                        identity
+                                                    )
+                                                        (Dict.values model.applications)
 
 
 viewApplication : Detail -> Element FrontendMsg
