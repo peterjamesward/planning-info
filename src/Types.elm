@@ -262,6 +262,7 @@ type alias FrontendModel =
     , typeFilters : Set String
     , statusFilters : Set String
     , decisionFilters : Set String
+    , currentTime : Time.Posix
 
     -- Constraint filters
     , green_belt : Bool
@@ -319,6 +320,7 @@ type FrontendMsg
     | Article_4_direction_area_Toggle Bool
     | Area_of_outstanding_natural_beauty_Toggle Bool
     | Site_of_special_scientific_interest_Toggle Bool
+    | TimeTicker Time.Posix
 
 
 type ToBackend

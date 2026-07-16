@@ -2,7 +2,7 @@ module Frontend exposing (..)
 
 import Browser exposing (UrlRequest(..))
 import Browser.Navigation as Nav
-import DateUtils
+import DateUtils exposing (withinLast30Days)
 import Dict exposing (Dict)
 import Element exposing (Element, alignLeft, alignRight, centerX, centerY, el, fill, fillPortion, padding, rgb255, rgba255, row, spacing, text, width)
 import Element.Background as Background
@@ -10,9 +10,13 @@ import Element.Border as Border exposing (rounded)
 import Element.Font as Font
 import Element.HexColor as HexColor exposing (hex)
 import Element.Input as Input
+import Env
+import FlatColors.FlatUIPalette
 import Html
 import Lamdera exposing (sendToBackend)
 import Set exposing (Set)
+import Task
+import Time
 import Types exposing (..)
 import Url
 import Url.Builder as Builder
@@ -68,6 +72,7 @@ init url key =
       , typeFilters = Set.empty
       , statusFilters = Set.empty
       , decisionFilters = Set.empty
+      , currentTime = Time.millisToPosix 0
       , green_belt = False
       , flood_risk_zone = False
       , conservation_area = False
@@ -77,13 +82,19 @@ init url key =
       , area_of_outstanding_natural_beauty = False
       , site_of_special_scientific_interest = False
       }
-    , sendToBackend NewClient
+    , Cmd.batch
+        [ sendToBackend NewClient
+        , Task.perform TimeTicker Time.now
+        ]
     )
 
 
 update : FrontendMsg -> Model -> ( Model, Cmd FrontendMsg )
 update msg model =
     case msg of
+        TimeTicker now ->
+            ( { model | currentTime = now }, Cmd.none )
+
         UrlClicked urlRequest ->
             case urlRequest of
                 Internal url ->
@@ -217,8 +228,101 @@ view model =
                         fullView model
 
                     Embedded ->
-                        Element.text "Hello"
+                        summaryView model
     }
+
+
+summaryView model =
+    -- Just an overview of activity
+    let
+        recentActivity =
+            model.applications
+                |> Dict.filter (\id a -> withinLast30Days model.currentTime a.lastChangeDate)
+
+        inProgress =
+            recentActivity
+                |> Dict.filter (\id a -> a.status == "received" || a.status == "pending_consideration")
+                |> Dict.size
+
+        approved =
+            recentActivity
+                |> Dict.filter (\id a -> a.decision == "approved")
+                |> Dict.size
+
+        rejected =
+            recentActivity
+                |> Dict.filter (\id a -> a.decision == "refused")
+                |> Dict.size
+
+        greenBelt =
+            recentActivity
+                |> Dict.filter (\id a -> a.green_belt)
+                |> Dict.size
+
+        conservation =
+            recentActivity
+                |> Dict.filter (\id a -> a.conservation_area /= "")
+                |> Dict.size
+
+        floodRisk =
+            recentActivity
+                |> Dict.filter (\id a -> a.flood_risk_zone /= "")
+                |> Dict.size
+
+        bigShape label quantity color =
+            Element.column
+                [ Border.width 1
+                , Border.rounded 20
+                , padding 20
+                , spacing 10
+                , Background.color color
+                , centerY
+                , Font.color FlatColors.FlatUIPalette.clouds
+                ]
+                [ Element.el [ centerX, Font.size 40 ] (Element.text <| String.fromInt quantity)
+                , Element.el [ centerX, Font.size 18 ] (Element.text label)
+                ]
+    in
+    Element.column
+        [ Element.alignTop
+        , padding 10
+        , spacing 10
+        , Element.alignLeft
+        ]
+        [ Element.row
+            [ Element.alignTop
+            , padding 10
+            , spacing 10
+            , Element.alignLeft
+            , centerX
+            ]
+            [ bigShape "Waiting" inProgress FlatColors.FlatUIPalette.sunFlower
+            , bigShape "Approved" approved FlatColors.FlatUIPalette.emerald
+            , bigShape "Refused" rejected FlatColors.FlatUIPalette.alizarin
+            ]
+        , Element.row
+            [ Element.alignTop
+            , padding 10
+            , spacing 10
+            , Element.alignLeft
+            , centerX
+            ]
+            [ bigShape "Green belt" greenBelt FlatColors.FlatUIPalette.nephritis
+            , bigShape "Conservation area" conservation FlatColors.FlatUIPalette.amethyst
+            ]
+        , Element.newTabLink
+            [ Border.width 1
+            , Border.rounded 10
+            , padding 20
+            , spacing 10
+            , Background.color FlatColors.FlatUIPalette.midnightBlue
+            , centerX
+            , Font.color FlatColors.FlatUIPalette.clouds
+            ]
+            { url = Env.fullPageAppUrl
+            , label = Element.el [ centerX, Font.size 18 ] (Element.text "Click here for full view")
+            }
+        ]
 
 
 fullView model =

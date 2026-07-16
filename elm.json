@@ -24,6 +24,7 @@
             "lukewestby/elm-string-interpolate": "1.0.4",
             "mdgriffith/elm-ui": "1.1.8",
             "rtfeldman/elm-iso8601-date-strings": "1.1.4",
+            "smucode/elm-flat-colors": "1.0.1",
             "turboMaCk/queue": "1.2.0"
         },
         "indirect": {

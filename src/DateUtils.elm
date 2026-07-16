@@ -120,3 +120,8 @@ isWorkday p =
 olderThanFourWeeks : Time.Posix -> Time.Posix -> Bool
 olderThanFourWeeks now candidate =
     Time.posixToMillis now - Time.posixToMillis candidate > fourWeeks
+
+
+withinLast30Days : Time.Posix -> Time.Posix -> Bool
+withinLast30Days now candidate =
+    Time.posixToMillis now - Time.posixToMillis candidate <= 30 * oneDay

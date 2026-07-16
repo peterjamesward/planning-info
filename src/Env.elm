@@ -10,3 +10,7 @@ dummyConfigItem =
 
 plannexusApiKey =
     "pn_live_c027d17ffb1fc4ce5b234ad3d74697887c573d16878cb279"
+
+
+fullPageAppUrl =
+    "https://planning-20260622.lamdera.app"
