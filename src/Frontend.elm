@@ -65,6 +65,10 @@ init url key =
 
             else
                 FullDisplay
+      , typeFilters = Set.empty
+      , statusFilters = Set.empty
+      , decisionFilters = Set.empty
+      , constraintFilters = Set.empty
       }
     , sendToBackend NewClient
     )
@@ -95,6 +99,35 @@ update msg model =
             ( { model | selected = Just string }
             , Cmd.none
             )
+
+        ToggleTypeFilter string bool ->
+            ( { model | typeFilters = toggleHelper string bool model.typeFilters }
+            , Cmd.none
+            )
+
+        ToggleStatusFilter string bool ->
+            ( { model | statusFilters = toggleHelper string bool model.statusFilters }
+            , Cmd.none
+            )
+
+        ToggleDecisionFilter string bool ->
+            ( { model | decisionFilters = toggleHelper string bool model.decisionFilters }
+            , Cmd.none
+            )
+
+        ToggleConstraintFilter string bool ->
+            ( { model | constraintFilters = toggleHelper string bool model.constraintFilters }
+            , Cmd.none
+            )
+
+
+toggleHelper : String -> Bool -> Set String -> Set String
+toggleHelper value state set =
+    if state then
+        Set.insert value set
+
+    else
+        Set.remove value set
 
 
 updateFromBackend : ToFrontend -> Model -> ( Model, Cmd FrontendMsg )
@@ -171,7 +204,7 @@ fullView model =
         , Element.alignLeft
         ]
         [ Element.row [ width fill ]
-            [ el [ width <| fillPortion 1 ] <| viewFilters model.applications
+            [ el [ width <| fillPortion 1 ] <| viewFilters model
             , el [ width <| fillPortion 3 ] <| viewApplications model.applications
             , el [ width <| fillPortion 3 ] <| viewSelected model.selected model.applications
             ]
@@ -183,32 +216,46 @@ fullView model =
         ]
 
 
-viewFilters : Dict String Detail -> Element FrontendMsg
-viewFilters applications =
+viewFilters : FrontendModel -> Element FrontendMsg
+viewFilters model =
     -- Get some insights from data.
     let
+        filterCheckbox msg currentSet label =
+            Input.checkbox
+                []
+                { onChange = msg label
+                , icon = Input.defaultCheckbox
+                , checked = Set.member label currentSet
+                , label = Input.labelRight [] <| text label
+                }
+
         applicationTypes =
             collectVariants .application_type
-                |> columnPrint "Types"
+                |> checkBoxes ToggleTypeFilter model.typeFilters
 
         statuses =
             collectVariants .status
-                |> columnPrint "Status"
+                |> checkBoxes ToggleStatusFilter model.statusFilters
 
         decisions =
             collectVariants .decision
-                |> columnPrint "Outcome"
+                |> checkBoxes ToggleDecisionFilter model.decisionFilters
 
         collectVariants : (Detail -> String) -> Set String
         collectVariants field =
-            applications
+            model.applications
                 |> Dict.values
                 |> List.map field
                 |> Set.fromList
+                |> Set.remove ""
 
-        columnPrint : String -> Set String -> Element FrontendMsg
-        columnPrint heading contents =
-            Element.column [] (contents |> Set.toList |> List.map Element.text)
+        checkBoxes : (String -> Bool -> FrontendMsg) -> Set String -> Set String -> Element FrontendMsg
+        checkBoxes msg current contents =
+            Element.column [ spacing 2 ]
+                (contents
+                    |> Set.toList
+                    |> List.map (filterCheckbox msg current)
+                )
     in
     Element.column
         [ Element.width fill
@@ -216,6 +263,12 @@ viewFilters applications =
         , padding 10
         , spacing 10
         , Element.alignLeft
+        , Font.family
+            [ Font.typeface "Helvetica"
+            , Font.sansSerif
+            ]
+        , Font.light
+        , Font.size 14
         ]
         [ applicationTypes
         , statuses

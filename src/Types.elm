@@ -5,6 +5,7 @@ import Browser.Navigation exposing (Key)
 import Dict exposing (Dict)
 import Http
 import Queue exposing (Queue)
+import Set exposing (Set)
 import Time
 import Url exposing (Url)
 
@@ -258,6 +259,10 @@ type alias FrontendModel =
     , applications : Dict String Detail
     , selected : Maybe String
     , mode : FrontEndMode
+    , typeFilters : Set String
+    , statusFilters : Set String
+    , decisionFilters : Set String
+    , constraintFilters : Set String
     }
 
 
@@ -294,6 +299,10 @@ type FrontendMsg
     | UrlChanged Url
     | NoOpFrontendMsg
     | Select String
+    | ToggleTypeFilter String Bool
+    | ToggleStatusFilter String Bool
+    | ToggleDecisionFilter String Bool
+    | ToggleConstraintFilter String Bool
 
 
 type ToBackend
