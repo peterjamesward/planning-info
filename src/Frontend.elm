@@ -69,6 +69,13 @@ init url key =
       , statusFilters = Set.empty
       , decisionFilters = Set.empty
       , constraintFilters = Set.empty
+      , flood_risk_zone_Filter = False
+      , conservation_area_Filter = False
+      , tree_preservation_zone_Filter = False
+      , listed_building_outline_Filter = False
+      , article_4_direction_area_Filter = False
+      , area_of_outstanding_natural_beauty = False
+      , site_of_special_scientific_interest = False
       }
     , sendToBackend NewClient
     )
@@ -119,6 +126,27 @@ update msg model =
             ( { model | constraintFilters = toggleHelper string bool model.constraintFilters }
             , Cmd.none
             )
+
+        Flood_risk_zone_Toggle bool ->
+            ( { model | flood_risk_zone_Filter = bool }, Cmd.none )
+
+        Conservation_area_Toggle bool ->
+            ( { model | conservation_area_Filter = bool }, Cmd.none )
+
+        Tree_preservation_zone_Toggle bool ->
+            ( { model | tree_preservation_zone_Filter = bool }, Cmd.none )
+
+        Listed_building_outline_Toggle bool ->
+            ( { model | listed_building_outline_Filter = bool }, Cmd.none )
+
+        Article_4_direction_area_Toggle bool ->
+            ( { model | article_4_direction_area_Filter = bool }, Cmd.none )
+
+        Area_of_outstanding_natural_beauty_Toggle bool ->
+            ( { model | area_of_outstanding_natural_beauty = bool }, Cmd.none )
+
+        Site_of_special_scientific_interest_Toggle bool ->
+            ( { model | site_of_special_scientific_interest = bool }, Cmd.none )
 
 
 toggleHelper : String -> Bool -> Set String -> Set String
@@ -256,6 +284,26 @@ viewFilters model =
                     |> Set.toList
                     |> List.map (filterCheckbox msg current)
                 )
+
+        constraintFilters =
+            Element.column [ spacing 2 ]
+                [ constraintFilter "Flood risk" Flood_risk_zone_Toggle model.flood_risk_zone_Filter
+                , constraintFilter "Conservation area" Conservation_area_Toggle model.conservation_area_Filter
+                , constraintFilter "Tree preservation zone" Tree_preservation_zone_Toggle model.tree_preservation_zone_Filter
+                , constraintFilter "Listed building" Listed_building_outline_Toggle model.listed_building_outline_Filter
+                , constraintFilter "Article 4" Article_4_direction_area_Toggle model.article_4_direction_area_Filter
+                , constraintFilter "AONB" Area_of_outstanding_natural_beauty_Toggle model.area_of_outstanding_natural_beauty
+                , constraintFilter "SSSI" Site_of_special_scientific_interest_Toggle model.site_of_special_scientific_interest
+                ]
+
+        constraintFilter label msg current =
+            Input.checkbox
+                []
+                { onChange = msg
+                , icon = Input.defaultCheckbox
+                , checked = current
+                , label = Input.labelRight [] <| text label
+                }
     in
     Element.column
         [ Element.width fill
@@ -273,8 +321,7 @@ viewFilters model =
         [ applicationTypes
         , statuses
         , decisions
-
-        --TODO: Constraint filters.
+        , constraintFilters
         ]
 
 

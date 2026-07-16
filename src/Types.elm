@@ -263,6 +263,13 @@ type alias FrontendModel =
     , statusFilters : Set String
     , decisionFilters : Set String
     , constraintFilters : Set String
+    , flood_risk_zone_Filter : Bool
+    , conservation_area_Filter : Bool
+    , tree_preservation_zone_Filter : Bool
+    , listed_building_outline_Filter : Bool
+    , article_4_direction_area_Filter : Bool
+    , area_of_outstanding_natural_beauty : Bool
+    , site_of_special_scientific_interest : Bool
     }
 
 
@@ -303,6 +310,13 @@ type FrontendMsg
     | ToggleStatusFilter String Bool
     | ToggleDecisionFilter String Bool
     | ToggleConstraintFilter String Bool
+    | Flood_risk_zone_Toggle Bool
+    | Conservation_area_Toggle Bool
+    | Tree_preservation_zone_Toggle Bool
+    | Listed_building_outline_Toggle Bool
+    | Article_4_direction_area_Toggle Bool
+    | Area_of_outstanding_natural_beauty_Toggle Bool
+    | Site_of_special_scientific_interest_Toggle Bool
 
 
 type ToBackend
