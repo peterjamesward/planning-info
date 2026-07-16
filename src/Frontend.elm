@@ -205,7 +205,7 @@ fullView model =
         ]
         [ Element.row [ width fill ]
             [ el [ width <| fillPortion 1 ] <| viewFilters model
-            , el [ width <| fillPortion 3 ] <| viewApplications model.applications
+            , el [ width <| fillPortion 3 ] <| viewApplications model
             , el [ width <| fillPortion 3 ] <| viewSelected model.selected model.applications
             ]
         , Element.paragraph [ spacing 5, Font.italic, Element.centerX ]
@@ -379,8 +379,8 @@ viewOnMap detail =
         }
 
 
-viewApplications : Dict String Detail -> Element FrontendMsg
-viewApplications applications =
+viewApplications : FrontendModel -> Element FrontendMsg
+viewApplications model =
     Element.column
         [ Element.height (Element.px 600)
         , Element.padding 10
@@ -390,7 +390,27 @@ viewApplications applications =
         ]
     <|
         List.map viewApplication <|
-            Dict.values applications
+            (if Set.isEmpty model.typeFilters then
+                identity
+
+             else
+                List.filter (\a -> Set.member a.application_type model.typeFilters)
+            )
+            <|
+                (if Set.isEmpty model.statusFilters then
+                    identity
+
+                 else
+                    List.filter (\a -> Set.member a.status model.statusFilters)
+                )
+                <|
+                    (if Set.isEmpty model.decisionFilters then
+                        identity
+
+                     else
+                        List.filter (\a -> Set.member a.decision model.decisionFilters)
+                    )
+                        (Dict.values model.applications)
 
 
 viewApplication : Detail -> Element FrontendMsg
