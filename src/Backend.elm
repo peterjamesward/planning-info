@@ -1,6 +1,6 @@
 module Backend exposing (..)
 
-import Applications exposing (isPurgeable)
+import Applications exposing (detailsOnly, isPurgeable)
 import DateUtils exposing (isWorkday, oneDay, oneYear)
 import Dict
 import Iso8601
@@ -226,12 +226,14 @@ update msg model =
                                         |> Time.millisToPosix
 
                                 timestampedDetail =
-                                    ApplicationDetail
-                                        { detail | lastChangeDate = mostRecentEntry }
+                                    { detail | lastChangeDate = mostRecentEntry }
                             in
                             ( { model
                                 | lastError = Nothing
-                                , applications = Dict.insert id timestampedDetail model.applications
+                                , applications =
+                                    Dict.insert id
+                                        (ApplicationDetail timestampedDetail)
+                                        model.applications
                               }
                             , Lamdera.broadcast (CachedApplication timestampedDetail)
                             )
@@ -253,5 +255,5 @@ updateFromFrontend sessionId clientId msg model =
 
         NewClient ->
             ( model
-            , sendToFrontend clientId (CachedApplications model.applications)
+            , sendToFrontend clientId (CachedApplications <| detailsOnly model.applications)
             )

@@ -1,6 +1,7 @@
 module Applications exposing (..)
 
 import DateUtils exposing (olderThanFourWeeks)
+import Dict exposing (Dict)
 import Set exposing (Set)
 import Time
 import Types exposing (..)
@@ -49,3 +50,18 @@ isPurgeable now id application =
                     False
     in
     isTerminated application && oneMonthSinceLastChange
+
+
+detailsOnly : Dict String Application -> Dict String Detail
+detailsOnly allApplications =
+    Dict.foldl
+        (\id app dict ->
+            case app of
+                ApplicationDetail detail ->
+                    Dict.insert id detail dict
+
+                ApplicationSummary _ ->
+                    dict
+        )
+        Dict.empty
+        allApplications

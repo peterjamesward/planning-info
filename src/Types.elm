@@ -240,15 +240,24 @@ type alias StateChange =
 -}
 
 
-type Application
+type
+    Application
+    -- Backend must allow alternate summary and detail.
+    -- Updates arrive as summary and we always request detail.
     = ApplicationSummary Summary
     | ApplicationDetail Detail
 
 
+type FrontEndMode
+    = FullDisplay
+    | Embedded
+
+
 type alias FrontendModel =
     { key : Key
-    , applications : Dict String Application
+    , applications : Dict String Detail
     , selected : Maybe String
+    , mode : FrontEndMode
     }
 
 
@@ -273,7 +282,7 @@ type
        1. Give me all changes <since time>, <paged>
        2. Give me full detail of <id>
        3. Give me full history of <id> (though not sure I need this now detail is stable)
-       All queries will use the queueing mechanism to respect the rate limit.
+       Always use the queueing mechanism to respect the rate limit.
     -}
     = SummaryQuery QueuedSummaryQuery
     | DetailQuery String
@@ -304,6 +313,6 @@ type BackendMsg
 
 type ToFrontend
     = NoOpToFrontend
-    | CachedApplications (Dict String Application)
-    | CachedApplication Application
+    | CachedApplications (Dict String Detail)
+    | CachedApplication Detail
     | PurgeApplications (List String)

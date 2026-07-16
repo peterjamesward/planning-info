@@ -3,16 +3,53 @@
 
 ## TODO
 
-Look at application types and possibly preemptively filter.
+Have an Activity tab which will fit well inside iframe, but links to Lamdera in a new browser window.
+> Need to create summary display of activity. 
+> Does this require retaining history?
+> No, just count received, pending, approved, rejected during last 30 days.
 
-UI should be clearer when Harrow URL is not available.
+Make it clear what the date represents (which is?).
 
-Paragraph wrap the status line and the description.
+Look at application types and possibly preemptively filter,
+or just allow user to filter by type or status?
+> Currently, Types:
+Adjacent Authority Consultation
+Advertisement Consent
+Approval of Details Reserved by Condition
+Certificate of Lawful Development Existing
+Certificate of Lawful Development Proposed
+Full Planning Application
+Householder
+Listed Building Consent
+Non-Material Amendment
+Prior Approval (Miscellaneous Acts)
+Prior Notification - Larger Home Extension
+Removal/Variation of Condition(s)
+Trees in a Conservation Area
+Works to Protected Trees
+advertisement
+change_of_use
+full_planning
+householder
+outline_planning
+prior_approval
+
+> Statuses:
+decided
+pending_consideration
+received
+
+> Decisions:
+approved
+not_required
+refused
+withdrawn
 
 Need to test purging!
 
 Apply colour and text formatting to decision. (More like a rubber stamp?)
-> Need to know which values there are and choose colours.
+> Need to know which values there are and choose colours for decision.
+> Show decision if available, with state as default.
 
 ## Backlog
 

@@ -12,6 +12,7 @@ import Element.HexColor as HexColor exposing (hex)
 import Element.Input as Input
 import Html
 import Lamdera exposing (sendToBackend)
+import Set exposing (Set)
 import Types exposing (..)
 import Url
 import Url.Builder as Builder
@@ -21,12 +22,24 @@ type alias Model =
     FrontendModel
 
 
-stanmoreGreen =
+lightGreen =
     rgba255 75 107 70 0.2
+
+
+stanmoreGreen =
+    rgb255 20 165 20
 
 
 stanmoreWhite =
     rgba255 255 255 255 1.0
+
+
+grey =
+    rgb255 200 200 200
+
+
+paleRed =
+    rgb255 180 120 120
 
 
 app =
@@ -46,6 +59,12 @@ init url key =
     ( { key = key
       , applications = Dict.empty
       , selected = Nothing
+      , mode =
+            if Debug.log "URL" url.path == "/embed" then
+                Embedded
+
+            else
+                FullDisplay
       }
     , sendToBackend NewClient
     )
@@ -90,18 +109,8 @@ updateFromBackend msg model =
             )
 
         CachedApplication application ->
-            let
-                id =
-                    case application of
-                        ApplicationDetail detail ->
-                            detail.id
-
-                        ApplicationSummary summary ->
-                            summary.id
-            in
             ( { model
-                | applications =
-                    Dict.insert id application model.applications
+                | applications = Dict.insert application.id application model.applications
               }
             , Cmd.none
             )
@@ -144,48 +153,112 @@ view model =
                 , Font.size 14
                 ]
             <|
-                Element.column [ Element.alignTop, padding 10, spacing 10, Element.alignLeft ]
-                    [ Element.row []
-                        [ viewApplications model.applications
-                        , viewSelected model.selected model.applications
-                        ]
-                    , Element.paragraph [ spacing 5, Font.italic, Element.centerX ]
-                        [ Element.text "There are currently "
-                        , Element.text (String.fromInt <| Dict.size model.applications)
-                        , Element.text " visible applications with special conditions in Harrow HA7 postcodes. "
-                        ]
-                    ]
+                case model.mode of
+                    FullDisplay ->
+                        fullView model
+
+                    Embedded ->
+                        Element.text "Hello"
     }
 
 
-linkToCouncil : Application -> Element FrontendMsg
-linkToCouncil application =
-    case application of
-        ApplicationDetail detail ->
-            Element.newTabLink
-                [ Font.bold
-                , Border.width 2
-                , Border.rounded 5
-                , padding 5
-                , Border.color stanmoreGreen
-                ]
-                { url = detail.source_url
-                , label =
-                    Element.paragraph []
-                        [ Element.text "Click here to view details or search on council planning portal" ]
-                }
+fullView model =
+    Element.column
+        [ Element.width fill
+        , Element.alignTop
+        , padding 10
+        , spacing 10
+        , Element.alignLeft
+        ]
+        [ Element.row [ width fill ]
+            [ el [ width <| fillPortion 1 ] <| viewFilters model.applications
+            , el [ width <| fillPortion 3 ] <| viewApplications model.applications
+            , el [ width <| fillPortion 3 ] <| viewSelected model.selected model.applications
+            ]
+        , Element.paragraph [ spacing 5, Font.italic, Element.centerX ]
+            [ Element.text "There are currently "
+            , Element.text (String.fromInt <| Dict.size model.applications)
+            , Element.text " visible applications in Harrow HA7 postcodes. "
+            ]
+        ]
 
-        ApplicationSummary _ ->
-            Element.none
+
+viewFilters : Dict String Detail -> Element FrontendMsg
+viewFilters applications =
+    -- Get some insights from data.
+    let
+        applicationTypes =
+            collectVariants .application_type
+                |> columnPrint "Types"
+
+        statuses =
+            collectVariants .status
+                |> columnPrint "Status"
+
+        decisions =
+            collectVariants .decision
+                |> columnPrint "Outcome"
+
+        collectVariants : (Detail -> String) -> Set String
+        collectVariants field =
+            applications
+                |> Dict.values
+                |> List.map field
+                |> Set.fromList
+
+        columnPrint : String -> Set String -> Element FrontendMsg
+        columnPrint heading contents =
+            Element.column [] (contents |> Set.toList |> List.map Element.text)
+    in
+    Element.column
+        [ Element.width fill
+        , Element.alignTop
+        , padding 10
+        , spacing 10
+        , Element.alignLeft
+        ]
+        [ applicationTypes
+        , statuses
+        , decisions
+
+        --TODO: Constraint filters.
+        ]
 
 
-viewSelected : Maybe String -> Dict String Application -> Element FrontendMsg
+linkToCouncil : Detail -> Element FrontendMsg
+linkToCouncil detail =
+    --e.g. https://planningsearch.harrow.gov.uk/planning/index.html?fa=getApplication&id=229024
+    if detail.source_url == "" then
+        Element.el
+            [ Font.italic
+            , Border.width 1
+            , Border.rounded 5
+            , padding 5
+            , Border.color (rgb255 200 200 200)
+            ]
+            (Element.text "Link to application not available.")
+
+    else
+        Element.newTabLink
+            [ Font.bold
+            , Border.width 2
+            , Border.rounded 5
+            , padding 5
+            , Border.color lightGreen
+            ]
+            { url = detail.source_url
+            , label =
+                Element.paragraph []
+                    [ Element.text "Click here to view details or search on council planning portal" ]
+            }
+
+
+viewSelected : Maybe String -> Dict String Detail -> Element FrontendMsg
 viewSelected id applications =
     case id of
         Just string ->
             Element.column
-                [ width (Element.px 400)
-                , padding 10
+                [ padding 10
                 , spacing 10
                 ]
                 [ case Dict.get string applications of
@@ -223,8 +296,8 @@ mapApiPath =
     [ "maps", "api", "staticmap" ]
 
 
-viewOnMap : Application -> Element FrontendMsg
-viewOnMap application =
+viewOnMap : Detail -> Element FrontendMsg
+viewOnMap detail =
     {- e.g.
        https://maps.googleapis.com/maps/api/staticmap
        ?center=40.714728,-73.998672&zoom=12&size=400x400&
@@ -232,12 +305,7 @@ viewOnMap application =
     -}
     let
         ( lat, long ) =
-            case application of
-                ApplicationSummary summary ->
-                    ( summary.latitude, summary.longitude )
-
-                ApplicationDetail detail ->
-                    ( detail.latitude, detail.longitude )
+            ( detail.latitude, detail.longitude )
 
         coordString =
             String.fromFloat lat ++ "," ++ String.fromFloat long
@@ -258,84 +326,73 @@ viewOnMap application =
         }
 
 
-viewApplications : Dict String Application -> Element FrontendMsg
+viewApplications : Dict String Detail -> Element FrontendMsg
 viewApplications applications =
     Element.column
         [ Element.height (Element.px 600)
-        , Element.width (Element.px 400)
         , Element.padding 10
         , Element.spacing 10
         , Element.scrollbarY
-        , Background.color stanmoreGreen
+        , Background.color lightGreen
         ]
     <|
         List.map viewApplication <|
             Dict.values applications
 
 
-viewApplication : Application -> Element FrontendMsg
-viewApplication application =
+viewApplication : Detail -> Element FrontendMsg
+viewApplication detail =
     let
-        applicationId =
-            case application of
-                ApplicationSummary summary ->
-                    summary.id
-
-                ApplicationDetail detail ->
-                    detail.id
-
-        asSummary summary =
-            Element.column [ spacing 4 ]
-                [ Element.el [ Font.bold ] <| Element.text summary.reference
-                , Element.paragraph [] [ Element.text summary.address ]
-                , Element.row
-                    [ Font.light, spacing 10 ]
-                    [ Element.text summary.application_type
-                    , Element.text summary.status
-                    , Element.text summary.date_received
-                    ]
-                ]
-
-        asDetail : Detail -> Element FrontendMsg
-        asDetail detail =
-            --TODO: Decision!
+        asDetail =
             Element.column [ spacing 4 ]
                 [ Element.el [ Font.bold ] <| Element.text detail.reference
                 , Element.paragraph [] [ Element.text detail.address ]
-                , case specials detail of
+                , case specials of
                     [] ->
                         Element.none
 
                     some ->
                         Element.wrappedRow [ spacing 4 ] some
                 , Element.paragraph [] [ Element.text detail.description ]
-                , Element.row
+                , Element.wrappedRow
                     [ Font.light, spacing 10 ]
                     [ Element.text detail.application_type
-                    , Element.text detail.status
                     , case detail.decision of
                         "" ->
-                            Element.none
+                            Element.text detail.status
 
-                        _ ->
+                        decision ->
                             Element.el
                                 [ Font.family
                                     [ Font.typeface "Impact"
                                     , Font.sansSerif
                                     ]
-                                , Font.size 24
-                                , Element.rotate 0.1
+                                , Font.size 18
+                                , Font.color (decisionColour decision)
+
+                                --, Element.rotate 0.1
                                 ]
-                                (Element.text detail.decision)
+                                (Element.text decision)
                     , Element.text <| DateUtils.dateFromPosix detail.lastChangeDate
                     ]
                 ]
 
+        decisionColour decision =
+            case decision of
+                "approved" ->
+                    stanmoreGreen
+
+                "refused" ->
+                    paleRed
+
+                _ ->
+                    grey
+
         safeHex x =
             x |> hex |> Maybe.withDefault (rgb255 140 140 140)
 
-        specials : Detail -> List (Element FrontendMsg)
-        specials detail =
+        specials : List (Element FrontendMsg)
+        specials =
             [ if detail.green_belt then
                 Just <| constraintWidget "Green Belt" (safeHex "#48742E")
 
@@ -394,12 +451,6 @@ viewApplication application =
         , padding 5
         , width fill
         ]
-        { onPress = Just <| Select <| applicationId
-        , label =
-            case application of
-                ApplicationSummary summary ->
-                    asSummary summary
-
-                ApplicationDetail detail ->
-                    asDetail detail
+        { onPress = Just <| Select <| detail.id
+        , label = asDetail
         }
