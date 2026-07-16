@@ -122,6 +122,9 @@ update msg model =
             , Cmd.none
             )
 
+        Green_belt_Toggle bool ->
+            ( { model | green_belt = bool }, Cmd.none )
+
         Flood_risk_zone_Toggle bool ->
             ( { model | flood_risk_zone = bool }, Cmd.none )
 
@@ -282,7 +285,8 @@ viewFilters model =
 
         constraintFilters =
             Element.column [ spacing 2 ]
-                [ constraintFilter "Flood risk" Flood_risk_zone_Toggle model.flood_risk_zone
+                [ constraintFilter "Green belt" Green_belt_Toggle model.green_belt
+                , constraintFilter "Flood risk" Flood_risk_zone_Toggle model.flood_risk_zone
                 , constraintFilter "Conservation area" Conservation_area_Toggle model.conservation_area
                 , constraintFilter "Tree preservation zone" Tree_preservation_zone_Toggle model.tree_preservation_zone
                 , constraintFilter "Listed building" Listed_building_outline_Toggle model.listed_building_outline
@@ -423,6 +427,37 @@ viewOnMap detail =
 
 viewApplications : FrontendModel -> Element FrontendMsg
 viewApplications model =
+    let
+        activeConstraintFilters =
+            [ model.green_belt
+            , model.flood_risk_zone
+            , model.conservation_area
+            , model.tree_preservation_zone
+            , model.listed_building_outline
+            , model.article_4_direction_area
+            , model.area_of_outstanding_natural_beauty
+            , model.site_of_special_scientific_interest
+            ]
+
+        constraintFilter application =
+            if List.any identity activeConstraintFilters then
+                let
+                    constraints =
+                        [ application.green_belt
+                        , application.flood_risk_zone /= ""
+                        , application.conservation_area /= ""
+                        , application.tree_preservation_zone
+                        , application.listed_building_outline /= ""
+                        , application.article_4_direction_area
+                        , application.area_of_outstanding_natural_beauty
+                        , application.site_of_special_scientific_interest
+                        ]
+                in
+                List.any identity <| List.map2 (&&) constraints activeConstraintFilters
+
+            else
+                True
+    in
     Element.column
         [ Element.height (Element.px 600)
         , Element.padding 10
@@ -432,83 +467,28 @@ viewApplications model =
         ]
     <|
         List.map viewApplication <|
-            (if Set.isEmpty model.typeFilters then
-                identity
-
-             else
-                List.filter (\a -> Set.member a.application_type model.typeFilters)
-            )
-            <|
-                (if Set.isEmpty model.statusFilters then
+            List.filter constraintFilter <|
+                (if Set.isEmpty model.typeFilters then
                     identity
 
                  else
-                    List.filter (\a -> Set.member a.status model.statusFilters)
+                    List.filter (\a -> Set.member a.application_type model.typeFilters)
                 )
                 <|
-                    (if Set.isEmpty model.decisionFilters then
+                    (if Set.isEmpty model.statusFilters then
                         identity
 
                      else
-                        List.filter (\a -> Set.member a.decision model.decisionFilters)
+                        List.filter (\a -> Set.member a.status model.statusFilters)
                     )
                     <|
-                        (if model.site_of_special_scientific_interest then
-                            List.filter (\a -> a.site_of_special_scientific_interest)
+                        (if Set.isEmpty model.decisionFilters then
+                            identity
 
                          else
-                            identity
+                            List.filter (\a -> Set.member a.decision model.decisionFilters)
                         )
-                        <|
-                            (if model.listed_building_outline then
-                                List.filter (\a -> a.listed_building_outline /= "")
-
-                             else
-                                identity
-                            )
-                            <|
-                                (if model.area_of_outstanding_natural_beauty then
-                                    List.filter (\a -> a.area_of_outstanding_natural_beauty)
-
-                                 else
-                                    identity
-                                )
-                                <|
-                                    (if model.conservation_area then
-                                        List.filter (\a -> a.conservation_area /= "")
-
-                                     else
-                                        identity
-                                    )
-                                    <|
-                                        (if model.article_4_direction_area then
-                                            List.filter (\a -> a.article_4_direction_area)
-
-                                         else
-                                            identity
-                                        )
-                                        <|
-                                            (if model.flood_risk_zone then
-                                                List.filter (\a -> a.flood_risk_zone /= "")
-
-                                             else
-                                                identity
-                                            )
-                                            <|
-                                                (if model.green_belt then
-                                                    List.filter (\a -> a.green_belt)
-
-                                                 else
-                                                    identity
-                                                )
-                                                <|
-                                                    (if model.tree_preservation_zone then
-                                                        List.filter (\a -> a.tree_preservation_zone)
-
-                                                     else
-                                                        identity
-                                                    )
-                                                        (Dict.values model.applications)
+                            (Dict.values model.applications)
 
 
 viewApplication : Detail -> Element FrontendMsg

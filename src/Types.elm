@@ -311,6 +311,7 @@ type FrontendMsg
     | ToggleTypeFilter String Bool
     | ToggleStatusFilter String Bool
     | ToggleDecisionFilter String Bool
+    | Green_belt_Toggle Bool
     | Flood_risk_zone_Toggle Bool
     | Conservation_area_Toggle Bool
     | Tree_preservation_zone_Toggle Bool
