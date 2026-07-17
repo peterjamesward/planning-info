@@ -314,7 +314,7 @@ summaryView model =
         [ Element.alignTop
         , padding 10
         , spacing 10
-        , Element.alignLeft
+        , Element.centerX
         ]
         [ Element.row
             [ Element.alignTop
