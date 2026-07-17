@@ -60,6 +60,28 @@ app =
 
 init : Url.Url -> Nav.Key -> ( Model, Cmd FrontendMsg )
 init url key =
+    let
+        applyPresetFilters : Model -> Model
+        applyPresetFilters m =
+            case url.path of
+                "/waiting" ->
+                    { m | statusFilters = Set.fromList [ "received", "pending_consideration" ] }
+
+                "/approved" ->
+                    { m | decisionFilters = Set.fromList [ "approved" ] }
+
+                "/refused" ->
+                    { m | decisionFilters = Set.fromList [ "refused" ] }
+
+                "/greenBelt" ->
+                    { m | green_belt = True }
+
+                "/conservation" ->
+                    { m | conservation_area = True }
+
+                _ ->
+                    m
+    in
     ( { key = key
       , applications = Dict.empty
       , selected = Nothing
@@ -82,6 +104,7 @@ init url key =
       , area_of_outstanding_natural_beauty = False
       , site_of_special_scientific_interest = False
       }
+        |> applyPresetFilters
     , Cmd.batch
         [ sendToBackend NewClient
         , Task.perform TimeTicker Time.now
@@ -269,19 +292,23 @@ summaryView model =
                 |> Dict.filter (\id a -> a.flood_risk_zone /= "")
                 |> Dict.size
 
-        bigShape label quantity color =
-            Element.column
-                [ Border.width 1
-                , Border.rounded 20
-                , padding 20
-                , spacing 10
-                , Background.color color
-                , centerY
-                , Font.color FlatColors.FlatUIPalette.clouds
-                ]
-                [ Element.el [ centerX, Font.size 40 ] (Element.text <| String.fromInt quantity)
-                , Element.el [ centerX, Font.size 18 ] (Element.text label)
-                ]
+        bigShape label quantity color link =
+            Element.newTabLink []
+                { url = link
+                , label =
+                    Element.column
+                        [ Border.width 1
+                        , Border.rounded 20
+                        , padding 20
+                        , spacing 10
+                        , Background.color color
+                        , centerY
+                        , Font.color FlatColors.FlatUIPalette.clouds
+                        ]
+                        [ Element.el [ centerX, Font.size 40 ] (Element.text <| String.fromInt quantity)
+                        , Element.el [ centerX, Font.size 18 ] (Element.text label)
+                        ]
+                }
     in
     Element.column
         [ Element.alignTop
@@ -296,10 +323,11 @@ summaryView model =
             , Element.alignLeft
             , centerX
             ]
-            [ bigShape "Waiting" inProgress FlatColors.FlatUIPalette.sunFlower
-            , bigShape "Approved" approved FlatColors.FlatUIPalette.emerald
-            , bigShape "Refused" rejected FlatColors.FlatUIPalette.alizarin
+            [ bigShape "New, waiting" inProgress FlatColors.FlatUIPalette.sunFlower "/waiting"
+            , bigShape "Approved" approved FlatColors.FlatUIPalette.emerald "/approved"
+            , bigShape "Refused" rejected FlatColors.FlatUIPalette.alizarin "/refused"
             ]
+        , Element.el [ centerX ] <| Element.text "These boxes measure activity with previous 30 days."
         , Element.row
             [ Element.alignTop
             , padding 10
@@ -307,8 +335,8 @@ summaryView model =
             , Element.alignLeft
             , centerX
             ]
-            [ bigShape "Green belt" greenBelt FlatColors.FlatUIPalette.nephritis
-            , bigShape "Conservation area" conservation FlatColors.FlatUIPalette.amethyst
+            [ bigShape "Green belt" greenBelt FlatColors.FlatUIPalette.nephritis "/greenBelt"
+            , bigShape "Conservation area" conservation FlatColors.FlatUIPalette.amethyst "/conservation"
             ]
         , Element.newTabLink
             [ Border.width 1

@@ -3,8 +3,6 @@
 
 ## TODO
 
-Preset filters from each activity box.
-
 Deploy!
 
 ## Backlog
