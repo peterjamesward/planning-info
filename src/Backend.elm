@@ -28,7 +28,7 @@ app =
                 if Queue.isEmpty m.queryQueue then
                     Sub.batch
                         [ Time.every DateUtils.oneHour BackgroundFetchTicker
-                        , Time.every DateUtils.oneDay BackgroundPurgeTicker
+                        , Time.every DateUtils.oneHour BackgroundPurgeTicker
                         ]
 
                 else
@@ -90,7 +90,7 @@ update msg model =
                     | currentTime = now
                     , queryQueue =
                         Queue.enqueue
-                            (SummaryQuery { sinceDate = fetchSince now, page = 1 })
+                            (Debug.log "QUEUEING" (SummaryQuery { sinceDate = fetchSince now, page = 1 }))
                             model.queryQueue
                   }
                 , Cmd.none
@@ -106,6 +106,9 @@ update msg model =
             let
                 ( query, tail ) =
                     Queue.dequeue model.queryQueue
+
+                _ =
+                    Debug.log "DEQUEUED" query
 
                 action =
                     case query of
@@ -126,6 +129,10 @@ update msg model =
             )
 
         GotSummaries fetch result ->
+            let
+                _ =
+                    Debug.log "RECEIVED" fetch
+            in
             case result of
                 Ok value ->
                     let

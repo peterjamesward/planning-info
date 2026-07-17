@@ -319,7 +319,7 @@ summaryView model =
             , centerX
             , Font.color FlatColors.FlatUIPalette.clouds
             ]
-            { url = Env.fullPageAppUrl
+            { url = "/"
             , label = Element.el [ centerX, Font.size 18 ] (Element.text "Click here for full view")
             }
         ]

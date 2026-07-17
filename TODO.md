@@ -3,7 +3,9 @@
 
 ## TODO
 
-Need to test purging!
+Preset filters from each activity box.
+
+Deploy!
 
 ## Backlog
 
