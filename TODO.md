@@ -3,8 +3,6 @@
 
 ## TODO
 
-Deploy!
-
 ## Backlog
 
 Post an email when a new HA7 submission arrives, maybe any state change,

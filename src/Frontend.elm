@@ -13,6 +13,7 @@ import Element.Input as Input
 import Env
 import FlatColors.FlatUIPalette
 import Html
+import IpInfo
 import Lamdera exposing (sendToBackend)
 import Set exposing (Set)
 import Task
@@ -108,6 +109,7 @@ init url key =
     , Cmd.batch
         [ sendToBackend NewClient
         , Task.perform TimeTicker Time.now
+        , IpInfo.requestIpInformation (\_ -> NoOpFrontendMsg)
         ]
     )
 
@@ -327,7 +329,7 @@ summaryView model =
             , bigShape "Approved" approved FlatColors.FlatUIPalette.emerald "/approved"
             , bigShape "Refused" rejected FlatColors.FlatUIPalette.alizarin "/refused"
             ]
-        , Element.el [ centerX ] <| Element.text "These boxes measure activity with previous 30 days."
+        , Element.el [ centerX ] <| Element.text "These are measures of activity within previous 30 days."
         , Element.row
             [ Element.alignTop
             , padding 10
